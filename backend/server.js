@@ -15,14 +15,17 @@ const io = new Server(server, {
 io.on("connection", (socket) => {
   console.log("User Connected:", socket.id);
 
+  socket.on("room-joined", (roomName) => {
+    socket.join(roomName);
+    console.log(`User joined room: ${roomName}`);
+  });
   socket.on("send-message", (message) => {
-    console.log("Message received:", message.content);
-    console.log("Socket ID:", message.id);
-    io.emit("receive-message", message);
+    console.log(message);
+    io.to(message.room).emit("receive-message", message);
   });
 
-  socket.on("typing-message", (socketID) => {
-    socket.broadcast.emit("typing-message-received", socketID);
+  socket.on("typing-send", (socketID) => {
+    socket.broadcast.emit("typing-received", socketID);
   });
 });
 
