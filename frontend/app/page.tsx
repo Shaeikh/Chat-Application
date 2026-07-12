@@ -120,33 +120,6 @@ function UserInputField({
           Confirm
         </InputGroupButton>
       </Field>
-      {/* <FieldGroup className="max-w-sm">
-        <Field>
-          <InputGroup className="">
-            <InputGroupTextarea
-              id="inline-end-textarea"
-              className="text-xl!"
-              placeholder="Enter your Username"
-              value={username}
-              onChange={(e) => onUsernameChange(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  onUsernameConfirm();
-                }
-              }}
-            />
-          </InputGroup>
-          <InputGroupButton
-            onClick={onUsernameConfirm}
-            variant="default"
-            size="sm"
-            className=""
-          >
-            Confirm
-          </InputGroupButton>
-        </Field>
-      </FieldGroup> */}
     </>
   );
 }
@@ -188,12 +161,11 @@ export default function App() {
   const [username, setUsername] = useState<string>("");
   const [currentUser, setCurrentUser] = useState<User>();
   const [users, setUsers] = useState<User[]>([]);
-  const [messageContent, setMessageContent] = useState<string | "">("");
-  const [messages, setMessages] = useState<MessageObjectType[] | []>([]);
+  const [messageContent, setMessageContent] = useState<string>("");
+  const [messages, setMessages] = useState<MessageObjectType[]>([]);
 
   const [currentRoom, setCurrentRoom] = useState<string>("");
-  // const [typing, setTyping] = useState<string[]>([]);
-  // const [isTyping, setIsTyping] = useState<boolean>(false);
+  // const [roomData, setRoomData] = useState<MessageObjectType[]>([]);
 
   const handleUserCreation = () => {
     const newUser: User = {
@@ -222,48 +194,59 @@ export default function App() {
 
   const handleRoomJoin = (name: string) => {
     if (!name.trim()) return;
-    socket.emit("room-joined", name);
-    socket.emit("send-message", {
+    const joinedRoomAlert = {
       user: "System",
       room: name,
       type: "system",
       id: generateRandomString(10),
       content: `${currentUser?.username} has Joined the room`,
       createdAt: Date.now(),
-    });
+    };
+    socket.emit("room-joined", name);
+    socket.emit("send-message", joinedRoomAlert);
   };
 
-  // useEffect(() => {
-  //   if (!messageContent.trim()) return;
+  useEffect(() => {
+    loadRoomData();
+  }, [currentRoom]);
 
-  //   socket.emit("typing-send", socket.id);
-  // }, [messageContent]);
+  const loadRoomData = () => {
+    const rooms = JSON.parse(localStorage.getItem("room-data") || "{}");
+    const data = rooms[currentRoom] ?? [];
+
+    // setRoomData(data);
+    console.log(
+      data.filter((e: MessageObjectType) => e.type.toLowerCase() !== "system"),
+    );
+    setMessages(
+      data.filter((e: MessageObjectType) => e.type.toLowerCase() !== "system"),
+    );
+  };
 
   useEffect(() => {
-    const handleRecieveMessage = (message: MessageObjectType) => {
-      console.log(message);
-      setMessages((prev) => [...prev, message]);
+    const handleReceiveMessage = (message: MessageObjectType) => {
+      const room = message.room;
+
+      const existingRoomData = JSON.parse(
+        localStorage.getItem("room-data") || "{}",
+      );
+
+      if (!existingRoomData[room]) {
+        existingRoomData[room] = [];
+      }
+
+      if (message.type !== "system") existingRoomData[room].push(message);
+
+      localStorage.setItem("room-data", JSON.stringify(existingRoomData));
+      setMessages((prev) => (room === currentRoom ? [...prev, message] : prev));
     };
 
-    // const handleTyping = (socketID: string) => {
-    //   setTyping((prev) => [...prev, socketID]);
-    //   setIsTyping(true);
-    // };
-
-    // const handleTypingStop = () => {
-    //   setIsTyping(false);
-    // };
-
-    socket.on("receive-message", handleRecieveMessage);
-    // socket.on("typing-received", handleTyping);
-    // socket.on("typing-stop-recieved", handleTypingStop);
+    socket.on("receive-message", handleReceiveMessage);
 
     return () => {
-      socket.off("receive-message", handleRecieveMessage);
-      // socket.off("typing-received", handleTyping);
-      // socket.off("typing-stop-recieved", handleTypingStop);
+      socket.off("receive-message", handleReceiveMessage);
     };
-  }, []);
+  }, [currentRoom]);
 
   return (
     <div className="h-full flex flex-1 flex-col">
@@ -296,7 +279,7 @@ export default function App() {
       {currentRoom && currentUser && (
         <div className="flex h-full flex-col mt-auto mb-4">
           <div className="flex w-full mt-auto max-h-full max-w-lg flex-col gap-6 m-auto p-3 rounded-xl">
-            {messages.map((msg) =>
+            {messages.map((msg, index) =>
               msg.type === "normal" ? (
                 <Message
                   align={currentUser?.id === msg.user?.id ? "end" : "start"}
@@ -316,7 +299,7 @@ export default function App() {
                   </MessageContent>
                 </Message>
               ) : (
-                <div key={msg.id} className="text-center">
+                <div key={index} className="text-center">
                   {msg.content}
                 </div>
               ),

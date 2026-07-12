@@ -23,10 +23,6 @@ io.on("connection", (socket) => {
     console.log(message);
     io.to(message.room).emit("receive-message", message);
   });
-
-  socket.on("typing-send", (socketID) => {
-    socket.broadcast.emit("typing-received", socketID);
-  });
 });
 
 server.listen(5000, "localhost", () => {
