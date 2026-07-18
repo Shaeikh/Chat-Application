@@ -20,18 +20,39 @@ import Image from "next/image";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signUpSchema } from "@/lib/validations/auth";
 
 const RegisterForm = () => {
   const router = useRouter();
 
   const [name, setUsername] = useState<string>("Shaeikh");
   const [email, setEmail] = useState<string>("sheikha24608@gmail.com");
-  const [password, setPassword] = useState<string>("Next196???");
+  const [password, setPassword] = useState<string>("SpecialPass123$$");
+  const [confirmPassword, setConfirmPassword] =
+    useState<string>("SpecialPass123$$");
   const image =
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
+
+  const handleSignUp = async (e: React.SubmitEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
+    const validation = signUpSchema.safeParse({
+      email,
+      password,
+      name,
+      confirmPassword,
+    });
+
+    if (!validation.success) {
+      const errors = validation?.error?.flatten()?.fieldErrors;
+      setFormErrors(errors as Record<string, string[]>);
+      console.log(formErrors);
+      return;
+    }
+
     const { data, error } = await authClient.signUp.email(
       {
         email,
@@ -45,18 +66,13 @@ const RegisterForm = () => {
           console.log("loading");
         },
         onSuccess: (ctx) => {
-          router.push("/");
+          router.push("/login");
         },
         onError: (ctx) => {
-          // display the error message
-          // console.log(ctx.error);
           alert("error: " + ctx.error.message);
         },
       },
     );
-
-    console.log({ data, error });
-    // router.push("/");
   };
 
   return (
@@ -160,6 +176,11 @@ const RegisterForm = () => {
                         value={name}
                         onChange={(e) => setUsername(e.target.value)}
                       />
+                      {formErrors.name && (
+                        <FieldDescription className="text-red-400">
+                          {formErrors.name[0]}
+                        </FieldDescription>
+                      )}
                     </Field>
                     <Field className="gap-1.5">
                       <FieldLabel
@@ -177,6 +198,11 @@ const RegisterForm = () => {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                       />
+                      {formErrors.email && (
+                        <FieldDescription className="text-red-400">
+                          {formErrors.email[0]}
+                        </FieldDescription>
+                      )}
                     </Field>
                     <Field className="gap-1.5">
                       <FieldLabel
@@ -195,6 +221,34 @@ const RegisterForm = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                       />
+                      {formErrors.password && (
+                        <FieldDescription className="text-red-400">
+                          {formErrors.password[0]}
+                        </FieldDescription>
+                      )}
+                    </Field>
+                    <Field className="gap-1.5">
+                      <FieldLabel
+                        htmlFor="confirmPassword"
+                        className="text-sm text-muted-foreground font-normal"
+                      >
+                        Confirm Password*
+                      </FieldLabel>
+
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        placeholder="Enter your password again"
+                        required
+                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      {formErrors.confirmPassword && (
+                        <FieldDescription className="text-red-400">
+                          {formErrors.confirmPassword[0]}
+                        </FieldDescription>
+                      )}
                     </Field>
                   </div>
 
@@ -206,6 +260,10 @@ const RegisterForm = () => {
                     >
                       Sign up
                     </Button>
+                    <FieldDescription>
+                      By clicking the Sign up, you agree to the{" "}
+                      <a>terms and conditions.</a>
+                    </FieldDescription>
                     <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
                       Already have an account?{" "}
                       <a

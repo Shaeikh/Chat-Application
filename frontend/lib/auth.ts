@@ -13,13 +13,4 @@ export const auth = betterAuth({
       );
     },
   },
-  // hooks: {
-  //   before: async (ctx) => {
-  //     console.log("➡️ Incoming:", JSON.stringify(ctx));
-  //   },
-
-  //   after: async (ctx) => {
-  //     console.log("✅ Finished:", JSON.stringify(ctx));
-  //   },
-  // },
 });
