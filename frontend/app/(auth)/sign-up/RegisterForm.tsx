@@ -24,37 +24,39 @@ import { useRouter } from "next/navigation";
 const RegisterForm = () => {
   const router = useRouter();
 
-  const [name, setUsername] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  const [name, setUsername] = useState<string>("Shaeikh");
+  const [email, setEmail] = useState<string>("sheikha24608@gmail.com");
+  const [password, setPassword] = useState<string>("Next196???");
   const image =
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
 
-  const handldeSignUp = async () => {
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
     const { data, error } = await authClient.signUp.email(
       {
-        email, // user email address
-        password, // user password -> min 8 characters by default
-        name, // user display name
-        image, // User image URL (optional)
-        callbackURL: "/", // A URL to redirect to after the user verifies their email (optional)
+        email,
+        password,
+        name,
+        image,
+        callbackURL: "/",
       },
       {
         onRequest: (ctx) => {
           console.log("loading");
         },
         onSuccess: (ctx) => {
-          router.push("/dashboard");
-          console.log("success");
+          router.push("/");
         },
         onError: (ctx) => {
           // display the error message
           // console.log(ctx.error);
-          alert(ctx.error);
+          alert("error: " + ctx.error.message);
         },
       },
     );
-    console.log(data);
+
+    console.log({ data, error });
+    // router.push("/");
   };
 
   return (
@@ -68,15 +70,15 @@ const RegisterForm = () => {
         <Image
           src="/bg.png"
           alt="Background"
-          fill // Makes the image fill the entire absolute container
-          priority // Ensures fast loading since this spans the whole screen
-          sizes="100vw" // Helps Next.js optimize file size for the screen width
-          className="object-cover object-center opacity-40" // Replaces your 'cover' class with proper scaling
+          fill
+          priority
+          sizes="100vw"
+          className="object-fill object-center opacity-40"
         />
       </div>
       <div className="py-10 md:py-20 max-w-7xl max-[1400px]:max-w-xl px-4 sm:px-0 m-auto w-full z-10">
         <div className="w-full max-w-xl">
-          <Card className="mr-10 p-6 sm:p-12 relative">
+          <Card className="mr-10 p-6 sm:p-10 relative">
             <CardHeader className="text-center gap-6 p-0">
               <div className="mx-auto">
                 <a href="">
@@ -102,7 +104,7 @@ const RegisterForm = () => {
               </div>
             </CardHeader>
             <CardContent className="flex items-center">
-              <form className="flex-1">
+              <form className="flex-1" onSubmit={handleSignUp}>
                 <FieldGroup className="gap-6">
                   <Field className="grid md:grid-cols-2 md:gap-6 gap-3">
                     <Button
@@ -201,7 +203,6 @@ const RegisterForm = () => {
                       type="submit"
                       size={"lg"}
                       className="bg-primary/80 rounded-lg cursor-pointer h-12 text-md! hover:bg-primary/60"
-                      onClick={handldeSignUp}
                     >
                       Sign up
                     </Button>

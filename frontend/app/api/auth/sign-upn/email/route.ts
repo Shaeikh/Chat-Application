@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { success } from "better-auth";
 
 interface RequestBody {
   email: string;
@@ -12,7 +11,7 @@ interface RequestBody {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as RequestBody; // Parses incoming JSON
+    const body = (await request.json()) as RequestBody;
     const data = await auth.api.signUpEmail({
       body: {
         email: body.email,
@@ -28,7 +27,7 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     return NextResponse.json(
-      { error: error?.message || "Signup failed" },
+      { success: false, error: error?.message || "Signup failed" },
       { status: 400 },
     );
   }

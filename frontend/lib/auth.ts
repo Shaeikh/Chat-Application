@@ -7,5 +7,19 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
+    onExistingUserSignUp: async (data, request) => {
+      console.log(
+        `Duplicate registration attempt for email: ${data.user.email}`,
+      );
+    },
   },
+  // hooks: {
+  //   before: async (ctx) => {
+  //     console.log("➡️ Incoming:", JSON.stringify(ctx));
+  //   },
+
+  //   after: async (ctx) => {
+  //     console.log("✅ Finished:", JSON.stringify(ctx));
+  //   },
+  // },
 });
