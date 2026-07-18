@@ -25,13 +25,9 @@ import { loginSchema } from "@/lib/validations/auth";
 const LoginForm = () => {
   const router = useRouter();
 
-  const [name, setUsername] = useState<string>("Shaeikh");
   const [email, setEmail] = useState<string>("sheikha24608@gmail.com");
   const [password, setPassword] = useState<string>("SpecialPass123$$");
-  const [confirmPassword, setConfirmPassword] =
-    useState<string>("SpecialPass123$$");
-  const image =
-    "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
+  const [rememberMe, setRememberMe] = useState<boolean>(true);
 
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string>("");
@@ -55,7 +51,8 @@ const LoginForm = () => {
       {
         email,
         password,
-        callbackURL: "/",
+        rememberMe,
+        callbackURL: "/chat",
       },
       {
         onRequest: (ctx) => {
@@ -66,7 +63,7 @@ const LoginForm = () => {
           router.push("/chat");
         },
         onError: (ctx) => {
-          setServerError("An error occured! Please try again later.");
+          setServerError(ctx.error.message);
         },
       },
     );
