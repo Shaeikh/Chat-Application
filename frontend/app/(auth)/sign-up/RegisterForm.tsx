@@ -19,8 +19,11 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const RegisterForm = () => {
+  const router = useRouter();
+
   const [name, setUsername] = useState<string>("");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -38,14 +41,16 @@ const RegisterForm = () => {
       },
       {
         onRequest: (ctx) => {
-          //show loading
+          console.log("loading");
         },
         onSuccess: (ctx) => {
-          //redirect to the dashboard or sign in page
+          router.push("/dashboard");
+          console.log("success");
         },
         onError: (ctx) => {
           // display the error message
-          alert(ctx.error.message);
+          // console.log(ctx.error);
+          alert(ctx.error);
         },
       },
     );

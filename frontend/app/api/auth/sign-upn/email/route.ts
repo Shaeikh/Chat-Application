@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { success } from "better-auth";
 
 interface RequestBody {
   email: string;
@@ -9,27 +10,26 @@ interface RequestBody {
   callbackURL: string;
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const body = (await request.json()) as RequestBody; // Parses incoming JSON
-    console.log(body);
-    const response = await auth.api.signUpEmail({
+    const data = await auth.api.signUpEmail({
       body: {
         email: body.email,
         password: body.password,
         name: body.name,
         image: body.image,
-        callbackURL: body.callbackURL,
       },
-      asResponse: true,
     });
-    console.log(response);
 
     return NextResponse.json({
-      receivedData: response,
+      success: true,
+      data,
     });
-  } catch (error) {
-    console.log(error);
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error?.message || "Signup failed" },
+      { status: 400 },
+    );
   }
 }
