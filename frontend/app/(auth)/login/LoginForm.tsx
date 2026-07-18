@@ -20,9 +20,9 @@ import Image from "next/image";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signUpSchema } from "@/lib/validations/auth";
+import { loginSchema } from "@/lib/validations/auth";
 
-const RegisterForm = () => {
+const LoginForm = () => {
   const router = useRouter();
 
   const [name, setUsername] = useState<string>("Shaeikh");
@@ -34,42 +34,39 @@ const RegisterForm = () => {
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
 
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
+  const [serverError, setServerError] = useState<string>("");
 
-  const handleSignUp = async (e: React.SubmitEvent) => {
+  const handleSubmitForm = async (e: React.SubmitEvent) => {
     e.preventDefault();
     setFormErrors({});
 
-    const validation = signUpSchema.safeParse({
+    const validation = loginSchema.safeParse({
       email,
       password,
-      name,
-      confirmPassword,
     });
 
     if (!validation.success) {
       const errors = validation?.error?.flatten()?.fieldErrors;
       setFormErrors(errors as Record<string, string[]>);
-      console.log(formErrors);
       return;
     }
 
-    const { data, error } = await authClient.signUp.email(
+    const { data, error } = await authClient.signIn.email(
       {
         email,
         password,
-        name,
-        image,
         callbackURL: "/",
       },
       {
         onRequest: (ctx) => {
+          if (serverError) setServerError("");
           console.log("loading");
         },
         onSuccess: (ctx) => {
-          router.push("/login");
+          router.push("/chat");
         },
         onError: (ctx) => {
-          alert("error: " + ctx.error.message);
+          setServerError("An error occured! Please try again later.");
         },
       },
     );
@@ -96,31 +93,26 @@ const RegisterForm = () => {
         <div className="w-full max-w-xl">
           <Card className="mr-10 p-6 sm:p-10 relative">
             <CardHeader className="text-center gap-6 p-0">
-              <div className="mx-auto">
+              {/* <div className="mx-auto">
                 <a href="">
-                  <img
-                    src="https://images.shadcnspace.com/assets/logo/logo-icon-black.svg"
-                    alt="shadcnspace"
-                    className="dark:hidden h-10 w-10"
-                  />
                   <img
                     src="https://images.shadcnspace.com/assets/logo/logo-icon-white.svg"
                     alt="shadcnspace"
                     className="hidden dark:block h-10 w-10"
                   />
                 </a>
-              </div>
+              </div> */}
               <div className="flex flex-col gap-1">
                 <CardTitle className="text-2xl font-medium text-card-foreground">
-                  Signup to Konvo
+                  Log in to Konvo
                 </CardTitle>
                 <CardDescription className="text-sm text-muted-foreground font-normal">
-                  Signup to your account now
+                  Log in to your account now
                 </CardDescription>
               </div>
             </CardHeader>
             <CardContent className="flex items-center">
-              <form className="flex-1" onSubmit={handleSignUp}>
+              <form className="flex-1" onSubmit={handleSubmitForm}>
                 <FieldGroup className="gap-6">
                   <Field className="grid md:grid-cols-2 md:gap-6 gap-3">
                     <Button
@@ -134,7 +126,7 @@ const RegisterForm = () => {
                         alt="google icon"
                         className="h-4 w-4"
                       />
-                      Sign up with Google
+                      Log in with Google
                     </Button>
                     <Button
                       disabled
@@ -152,36 +144,14 @@ const RegisterForm = () => {
                         alt="github icon"
                         className="hidden dark:block  h-4 w-4"
                       />
-                      Sign up with Github
+                      Log in with Github
                     </Button>
                   </Field>
                   <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card text-sm text-muted-foreground bg-transparent">
-                    <span className="px-4">or sign up with</span>
+                    <span className="px-4">or continue with</span>
                   </FieldSeparator>
 
                   <div className="flex flex-col gap-4">
-                    <Field className="gap-1.5">
-                      <FieldLabel
-                        htmlFor="name"
-                        className="text-sm text-muted-foreground font-normal"
-                      >
-                        Name*
-                      </FieldLabel>
-                      <Input
-                        id="text"
-                        type="text"
-                        placeholder="Enter your name"
-                        required
-                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
-                        value={name}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                      {formErrors.name && (
-                        <FieldDescription className="text-red-400">
-                          {formErrors.name[0]}
-                        </FieldDescription>
-                      )}
-                    </Field>
                     <Field className="gap-1.5">
                       <FieldLabel
                         htmlFor="email"
@@ -227,29 +197,6 @@ const RegisterForm = () => {
                         </FieldDescription>
                       )}
                     </Field>
-                    <Field className="gap-1.5">
-                      <FieldLabel
-                        htmlFor="confirmPassword"
-                        className="text-sm text-muted-foreground font-normal"
-                      >
-                        Confirm Password*
-                      </FieldLabel>
-
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        placeholder="Enter your password again"
-                        required
-                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                      {formErrors.confirmPassword && (
-                        <FieldDescription className="text-red-400">
-                          {formErrors.confirmPassword[0]}
-                        </FieldDescription>
-                      )}
-                    </Field>
                   </div>
 
                   <Field className="gap-4">
@@ -258,19 +205,20 @@ const RegisterForm = () => {
                       size={"lg"}
                       className="bg-primary/80 rounded-lg cursor-pointer h-12 text-md! hover:bg-primary/60"
                     >
-                      Sign up
+                      Log in
                     </Button>
-                    <FieldDescription>
-                      By clicking the Sign up, you agree to the{" "}
-                      <a>terms and conditions.</a>
-                    </FieldDescription>
+                    {serverError && (
+                      <FieldDescription className="text-red-400">
+                        {serverError}
+                      </FieldDescription>
+                    )}
                     <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
-                      Already have an account?{" "}
+                      New User?{" "}
                       <a
-                        href="login"
+                        href="signup"
                         className="font-medium text-card-foreground no-underline!"
                       >
-                        Sign in
+                        Sign Up
                       </a>
                     </FieldDescription>
                   </Field>
@@ -291,4 +239,4 @@ const RegisterForm = () => {
   );
 };
 
-export default RegisterForm;
+export default LoginForm;
