@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { socket } from "@/lib/socket";
 import { authClient } from "@/lib/auth-client";
@@ -62,7 +62,7 @@ export function MessageInput({
   return (
     <FieldGroup className="max-w-lg">
       <Field>
-        <InputGroup className="">
+        <InputGroup className="backdrop-blur-xl">
           <Input
             className="text-lg! px-4"
             placeholder="Write a message"
@@ -184,26 +184,28 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [messageContent, setMessageContent] = useState<string>("");
   const [messages, setMessages] = useState<MessageObject[]>([]);
-
   const [currentRoom, setCurrentRoom] = useState<string>("");
 
-  const { data: session, isPending } = authClient.useSession();
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  //   useEffect(() => {
+  //     messagesEndRef.current?.scrollIntoView({
+  //       behavior: "smooth",
+  //     });
+  //   }, [messages]);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
+  }, [messages]);
+
+  //   const { data: session, isPending } = authClient.useSession();
 
   //   const sessionData = isPending ? serverSession : session;
   const sessionData = serverSession;
-
-  // const [roomData, setRoomData] = useState<MessageObjectType[]>([]);
-
-  //   const handleUserCreation = () => {
-  //     const newUser: User = {
-  //       username: username,
-  //       id: generateRandomString(8),
-  //       createdAt: Date.now(),
-  //     };
-  //     setUsers((prev) => [...prev, newUser]);
-  //     setCurrentUser(newUser);
-  //     socket.emit("user-created", newUser);
-  //   };
 
   const handleSendMessage = () => {
     if (!messageContent.trim()) return;
@@ -298,85 +300,90 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
   return (
     sessionData && (
-      <div className="h-full flex flex-1 flex-col">
-        <div>
+      <div className="h-screen flex flex-col">
+        <div className="absolute">
           <ModeToggle />
+
+          {sessionData.user && (
+            <>
+              <Room
+                name="Room 1"
+                onRoomChange={setCurrentRoom}
+                onRoomJoin={handleRoomJoin}
+              />
+              <Room
+                name="Room 2"
+                onRoomChange={setCurrentRoom}
+                onRoomJoin={handleRoomJoin}
+              />
+            </>
+          )}
         </div>
-
-        {sessionData.user && (
-          <>
-            <Room
-              name="Room 1"
-              onRoomChange={setCurrentRoom}
-              onRoomJoin={handleRoomJoin}
-            />
-            <Room
-              name="Room 2"
-              onRoomChange={setCurrentRoom}
-              onRoomJoin={handleRoomJoin}
-            />
-          </>
-        )}
         {currentRoom && sessionData.user && (
-          <div className="flex h-full flex-col mt-auto mb-4">
-            <div className="flex w-full mt-auto max-h-full max-w-lg flex-col gap-6 m-auto p-3 rounded-xl">
-              {messages.map((msg, index) =>
-                msg.type === "normal" ? (
-                  <Message
-                    align={
-                      sessionData.user?.id === msg.user?.id ? "end" : "start"
-                    }
-                    key={msg.id}
-                  >
-                    <MessageAvatar>
-                      <Avatar>
-                        {msg?.user?.image && (
-                          <AvatarImage
-                            src={`${msg.user?.image}`}
-                            alt={
-                              sessionData.user.id === msg?.user?.id
-                                ? "@me"
-                                : `@${msg.user.name}`
-                            }
-                          />
-                        )}
-                        <AvatarFallback>
-                          {msg.user?.name?.slice(0, 2)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </MessageAvatar>
+          //   <div className="flex h-full flex-col mt-auto">
 
-                    <MessageContent>
-                      <MessageHeader>{msg.user?.name}</MessageHeader>
-                      <Bubble>
-                        <BubbleContent>{msg.content}</BubbleContent>
-                      </Bubble>
-                      <MessageFooter>Delivered</MessageFooter>
-                    </MessageContent>
-                  </Message>
-                ) : (
-                  <div key={index} className="text-center">
-                    {msg.content}
-                  </div>
-                ),
-              )}
+          //     <div className="flex w-full mt-auto max-h-full max-w-lg flex-col gap-6 mx-auto px-3 rounded-xl">
+          <>
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-900/40 scrollbar-track-transparent"
+            >
+              <div className="max-w-lg mx-auto w-full">
+                {messages.map((msg, index) =>
+                  msg.type === "normal" ? (
+                    <Message
+                      align={
+                        sessionData.user?.id === msg.user?.id ? "end" : "start"
+                      }
+                      key={msg.id}
+                    >
+                      <MessageAvatar>
+                        <Avatar>
+                          {msg?.user?.image && (
+                            <AvatarImage
+                              src={`${msg.user?.image}`}
+                              alt={
+                                sessionData.user.id === msg?.user?.id
+                                  ? "@me"
+                                  : `@${msg.user.name}`
+                              }
+                            />
+                          )}
+                          <AvatarFallback>
+                            {msg.user?.name?.slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </MessageAvatar>
 
-              {/* 
-        {isTyping && (
-          <Marker role="status">
-            <MarkerContent className="shimmer">
-              <span className="font-medium">{socket.id}</span> is typing...
-            </MarkerContent>
-          </Marker>
-        )} */}
+                      <MessageContent>
+                        <MessageHeader>{msg.user?.name}</MessageHeader>
+                        <Bubble>
+                          <BubbleContent>{msg.content}</BubbleContent>
+                        </Bubble>
+                        {/* <MessageFooter>Delivered</MessageFooter> */}
+                      </MessageContent>
+                    </Message>
+                  ) : (
+                    <div key={index} className="text-center">
+                      {msg.content}
+                    </div>
+                  ),
+                )}
 
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            <div className="shrink-0 border-none p-4 max-w-lg w-full mx-auto">
               <MessageInput
                 message={messageContent}
                 onMessageChange={setMessageContent}
                 onMessageSend={handleSendMessage}
               />
             </div>
-          </div>
+          </>
+          //     </div>
+          //   </div>
         )}
       </div>
     )
