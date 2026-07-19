@@ -26,8 +26,8 @@ import { Link } from "next-view-transitions";
 const LoginForm = () => {
   const router = useRouter();
 
-  const [email, setEmail] = useState<string>("sheikha24608@gmail.com");
-  const [password, setPassword] = useState<string>("SpecialPass123$$");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
   const [rememberMe, setRememberMe] = useState<boolean>(true); // TODO: Create a remmeber me checkbox
 
   const [isLoading, setIsLoading] = useState<boolean>(false);

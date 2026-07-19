@@ -26,11 +26,10 @@ import { Link } from "next-view-transitions";
 const RegisterForm = () => {
   const router = useRouter();
 
-  const [name, setUsername] = useState<string>("Shaeikh");
-  const [email, setEmail] = useState<string>("sheikha24608@gmail.com");
-  const [password, setPassword] = useState<string>("SpecialPass123$$");
-  const [confirmPassword, setConfirmPassword] =
-    useState<string>("SpecialPass123$$");
+  const [name, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
   const image =
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
 
