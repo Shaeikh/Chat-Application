@@ -33,6 +33,7 @@ const RegisterForm = () => {
   const image =
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string>("");
 
@@ -60,17 +61,18 @@ const RegisterForm = () => {
         password,
         name,
         image,
-        callbackURL: "/",
+        callbackURL: "/login",
       },
       {
         onRequest: (ctx) => {
           if (serverError) setServerError("");
-          console.log("loading");
+          setIsLoading(true);
         },
         onSuccess: (ctx) => {
-          router.push("/login");
+          router.push(`${JSON.parse(ctx.request.body).callbackURL}`);
         },
         onError: (ctx) => {
+          setIsLoading(false);
           setServerError("An error occured! Please try again later.");
         },
       },
@@ -165,6 +167,7 @@ const RegisterForm = () => {
                         Name*
                       </FieldLabel>
                       <Input
+                        disabled={isLoading}
                         id="text"
                         type="text"
                         placeholder="Enter your name"
@@ -187,6 +190,7 @@ const RegisterForm = () => {
                         Email*
                       </FieldLabel>
                       <Input
+                        disabled={isLoading}
                         id="email"
                         type="email"
                         placeholder="example@company.com"
@@ -210,6 +214,7 @@ const RegisterForm = () => {
                       </FieldLabel>
 
                       <Input
+                        disabled={isLoading}
                         id="password"
                         type="password"
                         placeholder="Enter your password"
@@ -233,6 +238,7 @@ const RegisterForm = () => {
                       </FieldLabel>
 
                       <Input
+                        disabled={isLoading}
                         id="confirm-password"
                         type="password"
                         placeholder="Enter your password again"
@@ -251,6 +257,7 @@ const RegisterForm = () => {
 
                   <Field className="gap-4">
                     <Button
+                      disabled={isLoading}
                       type="submit"
                       size={"lg"}
                       className="bg-primary/80 rounded-lg cursor-pointer h-12 text-md! hover:bg-primary/60"

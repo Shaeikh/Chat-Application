@@ -27,8 +27,9 @@ const LoginForm = () => {
 
   const [email, setEmail] = useState<string>("sheikha24608@gmail.com");
   const [password, setPassword] = useState<string>("SpecialPass123$$");
-  const [rememberMe, setRememberMe] = useState<boolean>(true);
+  const [rememberMe, setRememberMe] = useState<boolean>(true); // TODO: Create a remmeber me checkbox
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string>("");
 
@@ -57,12 +58,13 @@ const LoginForm = () => {
       {
         onRequest: (ctx) => {
           if (serverError) setServerError("");
-          console.log("loading");
+          setIsLoading(true);
         },
         onSuccess: (ctx) => {
-          router.push("/chat");
+          router.push(`${JSON.parse(ctx.request.body).callbackURL}`);
         },
         onError: (ctx) => {
+          setIsLoading(false);
           setServerError(ctx.error.message);
         },
       },
@@ -157,6 +159,7 @@ const LoginForm = () => {
                         Email*
                       </FieldLabel>
                       <Input
+                        disabled={isLoading}
                         id="email"
                         type="email"
                         placeholder="example@company.com"
@@ -180,6 +183,7 @@ const LoginForm = () => {
                       </FieldLabel>
 
                       <Input
+                        disabled={isLoading}
                         id="password"
                         type="password"
                         placeholder="Enter your password"
@@ -198,6 +202,7 @@ const LoginForm = () => {
 
                   <Field className="gap-4">
                     <Button
+                      disabled={isLoading}
                       type="submit"
                       size={"lg"}
                       className="bg-primary/80 rounded-lg cursor-pointer h-12 text-md! hover:bg-primary/60"
