@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import ChatUI from "./ChatUi";
+import ChatUI from "./ChatUI";
 
 export default async function ChatPage() {
   const session = await auth.api.getSession({

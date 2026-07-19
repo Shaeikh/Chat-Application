@@ -21,6 +21,7 @@ import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginSchema } from "@/lib/validations/auth";
+import { Link } from "next-view-transitions";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -216,12 +217,12 @@ const LoginForm = () => {
                     )}
                     <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
                       New User?{" "}
-                      <a
-                        href="signup"
+                      <Link
+                        href={"signup"}
                         className="font-medium text-card-foreground no-underline!"
                       >
                         Sign Up
-                      </a>
+                      </Link>
                     </FieldDescription>
                   </Field>
                 </FieldGroup>

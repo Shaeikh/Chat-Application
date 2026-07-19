@@ -13,6 +13,7 @@ import {
   MessageAvatar,
   MessageContent,
   MessageFooter,
+  MessageHeader,
 } from "@/components/ui/message";
 import { ModeToggle } from "@/components/ModeToggle";
 import {
@@ -188,7 +189,8 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
   const { data: session, isPending } = authClient.useSession();
 
-  const sessionData = isPending ? serverSession : session;
+  //   const sessionData = isPending ? serverSession : session;
+  const sessionData = serverSession;
 
   // const [roomData, setRoomData] = useState<MessageObjectType[]>([]);
 
@@ -343,10 +345,13 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                         </AvatarFallback>
                       </Avatar>
                     </MessageAvatar>
+
                     <MessageContent>
+                      <MessageHeader>{msg.user?.name}</MessageHeader>
                       <Bubble>
                         <BubbleContent>{msg.content}</BubbleContent>
                       </Bubble>
+                      <MessageFooter>Delivered</MessageFooter>
                     </MessageContent>
                   </Message>
                 ) : (

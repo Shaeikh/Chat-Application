@@ -7,7 +7,14 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/chat") && !sessionCookie) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
-  if (pathname.startsWith("/login") && sessionCookie) {
+  if (
+    (pathname.startsWith("/login") || pathname.startsWith("/signup")) &&
+    sessionCookie
+  ) {
+    return NextResponse.redirect(new URL("/chat", request.url));
+  }
+
+  if (pathname === "/") {
     return NextResponse.redirect(new URL("/chat", request.url));
   }
 
@@ -15,5 +22,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/login"],
+  matcher: ["/chat/:path*", "/login", "/signup", "/"],
 };
