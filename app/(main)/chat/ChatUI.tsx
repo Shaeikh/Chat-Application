@@ -223,6 +223,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
   const handleRoomJoin = (name: string) => {
     if (!name.trim()) return;
+
     const joinedRoomAlert = {
       user: "System",
       room: name,
@@ -240,13 +241,14 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   }, [currentRoom]);
 
   const loadRoomData = () => {
-    const rooms = JSON.parse(localStorage.getItem("room-data") || "{}");
-    const data = rooms[currentRoom] ?? [];
+    try {
+      const rooms = JSON.parse(localStorage.getItem("room-data") || "{}");
+      const data = rooms[currentRoom] ?? [];
 
-    // setRoomData(data);
-    setMessages(
-      data.filter((e: MessageObject) => e.type.toLowerCase() !== "system"),
-    );
+      setMessages(data.filter((e: MessageObject) => e.type !== "system"));
+    } catch (e) {
+      alert(String(e));
+    }
   };
 
   useEffect(() => {
@@ -316,6 +318,9 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 onRoomChange={setCurrentRoom}
                 onRoomJoin={handleRoomJoin}
               />
+              <p className="top-20 left-2 z-50 bg-black text-white">
+                {currentRoom}
+              </p>
             </>
           )}
         </div>
@@ -326,12 +331,13 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
           <>
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-900/40 scrollbar-track-transparent"
+              className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
             >
-              <div className="max-w-lg mx-auto w-full">
+              <div className="max-w-lg mx-auto w-full justify-end flex flex-col min-h-full">
                 {messages.map((msg, index) =>
                   msg.type === "normal" ? (
                     <Message
+                      className="mb-6"
                       align={
                         sessionData.user?.id === msg.user?.id ? "end" : "start"
                       }
@@ -374,7 +380,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               </div>
             </div>
 
-            <div className="shrink-0 border-none p-4 max-w-lg w-full mx-auto">
+            <div className="shrink-0 sticky bottom-0 border-none p-4 max-w-lg w-full mx-auto">
               <MessageInput
                 message={messageContent}
                 onMessageChange={setMessageContent}
