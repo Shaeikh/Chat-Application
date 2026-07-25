@@ -16,9 +16,10 @@ CREATE TABLE IF NOT EXISTS messages (
     room TEXT NOT NULL,
     type TEXT NOT NULL CHECK(type IN ('normal', 'system')),
     content TEXT NOT NULL,
-    created_at INTEGER NOT NULL
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 `,
 );
 
-export { db };
+export default db;

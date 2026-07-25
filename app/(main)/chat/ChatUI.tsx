@@ -37,21 +37,41 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { socket } from "@/lib/socket";
 import { authClient } from "@/lib/auth-client";
-import { generateRandomString } from "@/utils/generateRandomString";
-import { router } from "better-auth/api";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Alert,
-  AlertAction,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
-import { AlertCircleIcon } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 
 interface MessageInputProps {
   message: string | "";
   onMessageChange: (message: string | "") => void;
   onMessageSend: () => void;
+}
+
+interface RoomProps {
+  name: string;
+  onRoomChange: (name: string) => void;
+  onRoomJoin: (name: string) => void;
+}
+
+type Message = {
+  user?: User;
+  room: string;
+  type: "normal" | "system";
+  id: string | undefined;
+  content: string;
+  createdAt: number;
+};
+
+interface User {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+  image?: string | null | undefined;
+}
+
+interface ChatUIProps {
+  serverSession: typeof authClient.$Infer.Session;
 }
 
 export function MessageInput({
@@ -91,57 +111,6 @@ export function MessageInput({
   );
 }
 
-interface UserInputFieldProps {
-  username: string;
-  onUsernameChange: (username: string) => void;
-  onUsernameConfirm: () => void;
-}
-
-function UserInputField({
-  username,
-  onUsernameChange,
-  onUsernameConfirm,
-}: UserInputFieldProps) {
-  return (
-    <>
-      <Field className="max-w-sm m-auto">
-        <FieldLabel htmlFor="input-field-username">Username</FieldLabel>
-        <Input
-          id="input-field-username"
-          className="bg-input/50 h-10"
-          type="text"
-          placeholder="Enter your username"
-          value={username}
-          onChange={(e) => onUsernameChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              onUsernameConfirm();
-            }
-          }}
-        />
-        <FieldDescription>
-          Choose a unique username for your account.
-        </FieldDescription>
-        <InputGroupButton
-          onClick={onUsernameConfirm}
-          variant="default"
-          size="sm"
-          className=""
-        >
-          Confirm
-        </InputGroupButton>
-      </Field>
-    </>
-  );
-}
-
-interface RoomProps {
-  name: string;
-  onRoomChange: (name: string) => void;
-  onRoomJoin: (name: string) => void;
-}
-
 function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
   function onClick() {
     onRoomChange(name);
@@ -154,66 +123,38 @@ function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
   );
 }
 
-type MessageObject = {
-  user?: User;
-  room: string;
-  type: "normal" | "system";
-  id: string | undefined;
-  content: string;
-  createdAt: number;
-};
-
-interface User {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  email: string;
-  emailVerified: boolean;
-  name: string;
-  image?: string | null | undefined;
-}
-
-interface ChatUIProps {
-  serverSession: typeof authClient.$Infer.Session;
-}
-
 export default function ChatUI({ serverSession }: ChatUIProps) {
-  const router = useRouter();
-  const [username, setUsername] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState<User>();
-  const [users, setUsers] = useState<User[]>([]);
+  const [user, setUser] = useState<User>();
   const [messageContent, setMessageContent] = useState<string>("");
-  const [messages, setMessages] = useState<MessageObject[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [currentRoom, setCurrentRoom] = useState<string>("");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  //   useEffect(() => {
-  //     messagesEndRef.current?.scrollIntoView({
-  //       behavior: "smooth",
-  //     });
-  //   }, [messages]);
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const container = messagesContainerRef.current;
+  // useEffect(() => {
+  //   const container = messagesContainerRef.current;
 
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-  }, [messages]);
-
-  //   const { data: session, isPending } = authClient.useSession();
+  //   if (container) {
+  //     container.scrollTop = container.scrollHeight;
+  //   }
+  // }, [messages]);
 
   //   const sessionData = isPending ? serverSession : session;
   const sessionData = serverSession;
 
   const handleSendMessage = () => {
     if (!messageContent.trim()) return;
-    const messageObj: MessageObject = {
+    const messageObj: Message = {
       user: sessionData?.user,
       room: currentRoom,
       type: "normal",
-      id: generateRandomString(5),
+      id: uuidv4(),
       content: messageContent.trim(),
       createdAt: Date.now(),
     };
@@ -228,7 +169,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       user: "System",
       room: name,
       type: "system",
-      id: generateRandomString(10),
+      id: uuidv4(),
       content: `${sessionData?.user.name} has Joined the room`,
       createdAt: Date.now(),
     };
@@ -240,32 +181,45 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     loadRoomData();
   }, [currentRoom]);
 
-  const loadRoomData = () => {
-    try {
-      const rooms = JSON.parse(localStorage.getItem("room-data") || "{}");
-      const data = rooms[currentRoom] ?? [];
+  useEffect(() => {
+    setUser(sessionData.user);
+  }, []);
 
-      setMessages(data.filter((e: MessageObject) => e.type !== "system"));
+  const loadRoomData = async () => {
+    try {
+      // const rooms = JSON.parse(localStorage.getItem("room-data") || "{}");
+      // const data = rooms[currentRoom] ?? [];
+      // setMessages(data.filter((e: MessageObject) => e.type !== "system"));
+      if (currentRoom) {
+        const response = await fetch("/api/chat/" + currentRoom);
+        const data = (await response.json()) as Message[];
+        console.log(data);
+        setMessages(
+          data.filter((message: Message) => message.type !== "system"),
+        );
+      } else {
+        setMessages([]);
+      }
     } catch (e) {
       alert(String(e));
     }
   };
 
   useEffect(() => {
-    const handleReceiveMessage = (message: MessageObject) => {
+    const handleReceiveMessage = (message: Message) => {
       const room = message.room;
 
-      const existingRoomData = JSON.parse(
-        localStorage.getItem("room-data") || "{}",
-      );
+      // const existingRoomData = JSON.parse(
+      //   localStorage.getItem("room-data") || "{}",
+      // );
 
-      if (!existingRoomData[room]) {
-        existingRoomData[room] = [];
-      }
+      // if (!existingRoomData[room]) {
+      //   existingRoomData[room] = [];
+      // }
 
-      if (message.type !== "system") existingRoomData[room].push(message);
+      // if (message.type !== "system") existingRoomData[room].push(message);
 
-      localStorage.setItem("room-data", JSON.stringify(existingRoomData));
+      // localStorage.setItem("room-data", JSON.stringify(existingRoomData));
       setMessages((prev) => (room === currentRoom ? [...prev, message] : prev));
     };
 
@@ -275,30 +229,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       socket.off("receive-message", handleReceiveMessage);
     };
   }, [currentRoom]);
-
-  //   useEffect(() => {
-  //     if (!isPending && !sessionData) router.push("/login");
-  //   }, [isPending, sessionData, router]);
-
-  //   if (isPending || !sessionData) {
-  //     return (
-  //       <>
-  //         <div className="m-auto">
-  //           <Spinner className="mx-auto w-full mb-5" />
-  //           {error && (
-  //             <p className="text-xl">
-  //               Couldn't load your chats. Please check your connection and try
-  //               again.
-  //             </p>
-  //           )}
-  //         </div>
-  //       </>
-  //     );
-  //   }
-
-  useEffect(() => {
-    console.log(sessionData);
-  }, []);
 
   return (
     sessionData && (

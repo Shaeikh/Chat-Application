@@ -1,7 +1,7 @@
 import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
-import { db } from "./lib/db";
+import db from "./lib/db";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
@@ -15,13 +15,12 @@ app.prepare().then(() => {
 
   const io = new Server(httpServer);
   io.on("connection", (socket) => {
-    socket.onAny((event, ...args) => {
-      console.log("EVENT:", event, args);
-    });
+    // socket.onAny((event, ...args) => {
+    //   console.log("EVENT:", event, args);
+    // });
     console.log("User Connected:", socket.id);
 
     socket.on("room-joined", (roomName) => {
-      console.log("Joining room:", roomName);
       socket.join(roomName);
     });
     socket.on("send-message", (message) => {
