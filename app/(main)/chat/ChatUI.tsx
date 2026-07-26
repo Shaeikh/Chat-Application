@@ -291,18 +291,23 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const [currentRoom, setCurrentRoom] = useState<string>("");
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [chatLoaded, setChatLoaded] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    if (messagesEndRef) {
-      const rect = messagesEndRef?.current?.getBoundingClientRect();
-      // Y position relative to the entire document/page
-      console.log(rect?.y, window.scrollY);
+    if (chatLoaded) {
       messagesEndRef.current?.scrollIntoView({
+        behavior: "instant",
+      });
+    } else {
+      messagesEndRef?.current?.scrollIntoView({
         behavior: "smooth",
       });
     }
-  }, [messages]);
+  }, [chatLoaded, messages]);
+
+  useEffect(() => {}, [messages]);
+
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // useEffect(() => {
@@ -349,23 +354,12 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     loadRoomData();
   }, [currentRoom]);
 
-  useEffect(() => {
-    setUser(sessionData.user);
-  }, []);
-
-  // useEffect(() => {
-  //   if (!chatLoading) {
-
-  //   }
-  // }, [messages, chatLoading]);
-
   const loadRoomData = async () => {
     if (!currentRoom) {
       setMessages([]);
       return;
     }
     try {
-      setChatLoading(true);
       setChatError(null);
 
       const response = await fetch(`/api/chat/${currentRoom}`);
@@ -374,10 +368,14 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       }
       const data = (await response.json()) as Message[];
       setMessages(data.filter((message: Message) => message.type !== "system"));
+      setChatLoaded(true);
     } catch (e) {
       setChatError(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setChatLoading(false);
+      setTimeout(() => {
+        setChatLoaded(false);
+      }, 500);
     }
   };
 
@@ -451,7 +449,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               </div>
             </div>
 
-            <div className="shrink-0 sticky bottom-0 border-none p-4 max-w-lg w-full mx-auto">
+            <div className="shrink-0 sticky bottom-0 border-none p-3 max-w-lg w-full mx-auto">
               <MessageInput
                 message={messageContent}
                 onMessageChange={setMessageContent}
