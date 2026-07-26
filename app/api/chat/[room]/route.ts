@@ -37,8 +37,6 @@ export async function GET(request: Request, { params }: { params: Params }) {
       )
       .all(room);
 
-    console.log("Current room:", room);
-
     if (!rows) {
       return NextResponse.json({ error: "Room not found!" }, { status: 404 });
     }

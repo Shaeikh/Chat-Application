@@ -13,6 +13,7 @@ import {
   MessageAvatar,
   MessageContent,
   MessageFooter,
+  MessageGroup,
   MessageHeader,
 } from "@/components/ui/message";
 import { ModeToggle } from "@/components/ModeToggle";
@@ -70,6 +71,11 @@ interface User {
   image?: string | null | undefined;
 }
 
+interface MessageContainerProps {
+  messages: Message[];
+  user: User;
+}
+
 interface ChatUIProps {
   serverSession: typeof authClient.$Infer.Session;
 }
@@ -121,6 +127,55 @@ function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
       <Button onClick={onClick}>{name}</Button>
     </div>
   );
+}
+
+function MessageContainer({ messages, user }: MessageContainerProps) {
+  const container = messages.map((msg, index) => {
+    const previous = messages[index - 1];
+    const next = messages[index + 1];
+
+    const sameAsPrevious = previous?.user?.id === msg?.user?.id;
+    const sameAsNext = next?.user?.id === msg?.user?.id;
+    const isNormalMessage = msg.type === "normal";
+
+    const messageBody = isNormalMessage ? (
+      <Message
+        className={!sameAsPrevious ? "mt-6" : "mb-1"}
+        align={user?.id === msg.user?.id ? "end" : "start"}
+      >
+        {!sameAsNext ? (
+          <MessageAvatar>
+            <Avatar>
+              {msg?.user?.image && (
+                <AvatarImage src={`${msg.user?.image}`} alt={msg.user?.name} />
+              )}
+              <AvatarFallback>{msg.user?.name?.slice(0, 2)}</AvatarFallback>
+            </Avatar>
+          </MessageAvatar>
+        ) : (
+          <MessageAvatar />
+        )}
+
+        <MessageContent>
+          {!sameAsPrevious ? (
+            <MessageHeader>{msg.user?.name}</MessageHeader>
+          ) : (
+            <span />
+          )}
+
+          <Bubble>
+            <BubbleContent>{msg.content}</BubbleContent>
+          </Bubble>
+          {/* <MessageFooter>Delivered</MessageFooter> */}
+        </MessageContent>
+      </Message>
+    ) : (
+      <div className="text-center">{msg.content}</div>
+    );
+
+    return <div key={msg.id}>{messageBody}</div>;
+  });
+  return <>{container}</>;
 }
 
 export default function ChatUI({ serverSession }: ChatUIProps) {
@@ -193,7 +248,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       if (currentRoom) {
         const response = await fetch("/api/chat/" + currentRoom);
         const data = (await response.json()) as Message[];
-        console.log(data);
         setMessages(
           data.filter((message: Message) => message.type !== "system"),
         );
@@ -264,48 +318,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
             >
               <div className="max-w-lg mx-auto w-full justify-end flex flex-col min-h-full">
-                {messages.map((msg, index) =>
-                  msg.type === "normal" ? (
-                    <Message
-                      className="mb-6"
-                      align={
-                        sessionData.user?.id === msg.user?.id ? "end" : "start"
-                      }
-                      key={msg.id}
-                    >
-                      <MessageAvatar>
-                        <Avatar>
-                          {msg?.user?.image && (
-                            <AvatarImage
-                              src={`${msg.user?.image}`}
-                              alt={
-                                sessionData.user.id === msg?.user?.id
-                                  ? "@me"
-                                  : `@${msg.user.name}`
-                              }
-                            />
-                          )}
-                          <AvatarFallback>
-                            {msg.user?.name?.slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                      </MessageAvatar>
-
-                      <MessageContent>
-                        <MessageHeader>{msg.user?.name}</MessageHeader>
-                        <Bubble>
-                          <BubbleContent>{msg.content}</BubbleContent>
-                        </Bubble>
-                        {/* <MessageFooter>Delivered</MessageFooter> */}
-                      </MessageContent>
-                    </Message>
-                  ) : (
-                    <div key={index} className="text-center">
-                      {msg.content}
-                    </div>
-                  ),
-                )}
-
+                <MessageContainer messages={messages} user={sessionData.user} />
                 <div ref={messagesEndRef} />
               </div>
             </div>
