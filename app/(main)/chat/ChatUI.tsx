@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation";
 import { socket } from "@/lib/socket";
 import { authClient } from "@/lib/auth-client";
 import { v4 as uuidv4 } from "uuid";
+import { cn } from "@/lib/utils";
 
 interface MessageInputProps {
   message: string | "";
@@ -138,12 +139,28 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
     const sameAsNext = next?.user?.id === msg?.user?.id;
     const isNormalMessage = msg.type === "normal";
 
+    const MAX_GAP = 5 * 60 * 1000; // 5 Minutes
+    const nextGrouped =
+      next &&
+      next.user?.id === msg.user?.id &&
+      new Date(next.createdAt).getTime() - new Date(msg.createdAt).getTime() <
+        MAX_GAP;
+    const previousGrouped =
+      previous &&
+      previous.user?.id === msg.user?.id &&
+      new Date(previous.createdAt).getTime() -
+        new Date(msg.createdAt).getTime() <
+        MAX_GAP;
+
+    const showAvatar = !nextGrouped;
+    const showUsername = !previousGrouped;
+
     const messageBody = isNormalMessage ? (
       <Message
-        className={!sameAsPrevious ? "mt-6" : "mb-1"}
+        className={cn("transition-all", sameAsPrevious ? "mt-1" : "mt-6")}
         align={user?.id === msg.user?.id ? "end" : "start"}
       >
-        {!sameAsNext ? (
+        {showAvatar ? (
           <MessageAvatar>
             <Avatar>
               {msg?.user?.image && (
@@ -157,10 +174,10 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
         )}
 
         <MessageContent>
-          {!sameAsPrevious ? (
+          {showUsername ? (
             <MessageHeader>{msg.user?.name}</MessageHeader>
           ) : (
-            <span />
+            <div className="w-10 shrink-0" />
           )}
 
           <Bubble>
@@ -309,9 +326,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
           )}
         </div>
         {currentRoom && sessionData.user && (
-          //   <div className="flex h-full flex-col mt-auto">
-
-          //     <div className="flex w-full mt-auto max-h-full max-w-lg flex-col gap-6 mx-auto px-3 rounded-xl">
           <>
             <div
               ref={messagesContainerRef}
@@ -331,8 +345,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               />
             </div>
           </>
-          //     </div>
-          //   </div>
         )}
       </div>
     )
