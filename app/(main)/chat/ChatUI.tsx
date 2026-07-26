@@ -40,9 +40,11 @@ import { socket } from "@/lib/socket";
 import { authClient } from "@/lib/auth-client";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MessageInputProps {
   message: string | "";
+  disabled?: boolean;
   onMessageChange: (message: string | "") => void;
   onMessageSend: () => void;
 }
@@ -85,13 +87,15 @@ export function MessageInput({
   message,
   onMessageChange,
   onMessageSend,
+  disabled = true,
 }: MessageInputProps) {
   return (
     <FieldGroup className="max-w-lg">
       <Field>
         <InputGroup className="backdrop-blur-xl">
           <Input
-            className="text-lg! px-4"
+            disabled={disabled}
+            className="text-lg! px-4 disabled:cursor-not-allowed disabled:pointer-events-auto"
             placeholder="Write a message"
             value={message}
             onChange={(e) => onMessageChange(e.target.value)}
@@ -107,7 +111,8 @@ export function MessageInput({
               onClick={onMessageSend}
               variant="secondary"
               size="sm"
-              className="ml-auto "
+              className="ml-auto disabled:cursor-not-allowed disabled:hover:bg-secondary disabled:pointer-events-auto"
+              disabled={disabled}
             >
               Send
             </InputGroupButton>
@@ -195,17 +200,108 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
   return <>{container}</>;
 }
 
+function MessageSkeleton() {
+  return (
+    <>
+      <Message align="end">
+        <MessageAvatar>
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
+        </MessageAvatar>
+        <MessageContent>
+          <MessageHeader>
+            <Skeleton className="ml-2 h-[10.75] w-10" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-10.75 rounded-3xl w-40" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+      <Message align="start">
+        <MessageAvatar>
+          <Skeleton className="h-9 w-9 rounded-full" />
+        </MessageAvatar>
+        <MessageContent>
+          <MessageHeader>
+            <Skeleton className="h-[10.75] w-10" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-10.75 rounded-3xl w-30" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+
+      <Message align="end">
+        <MessageAvatar>
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
+        </MessageAvatar>
+        <MessageContent>
+          <MessageHeader>
+            <Skeleton className="ml-2 h-[10.75] w-10" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-10.75 rounded-3xl w-60" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+      <Message align="start">
+        <MessageAvatar>
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
+        </MessageAvatar>
+        <MessageContent>
+          <MessageHeader>
+            <Skeleton className="h-[10.75] w-10" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-21.5 rounded-3xl w-80" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+      <Message align="end">
+        <MessageAvatar />
+        <MessageContent>
+          <MessageHeader>
+            <Skeleton className="ml-2 h-[10.75] w-10" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-10.75 rounded-3xl w-60" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+      <Message align="end">
+        <MessageAvatar>
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
+        </MessageAvatar>
+        <MessageContent>
+          <MessageHeader>
+            <div className="mt-2" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-10.75 rounded-3xl w-60" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+    </>
+  );
+}
+
 export default function ChatUI({ serverSession }: ChatUIProps) {
   const [user, setUser] = useState<User>();
   const [messageContent, setMessageContent] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentRoom, setCurrentRoom] = useState<string>("");
+  const [chatLoading, setChatLoading] = useState<boolean>(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    if (messagesEndRef) {
+      const rect = messagesEndRef?.current?.getBoundingClientRect();
+      // Y position relative to the entire document/page
+      console.log(rect?.y, window.scrollY);
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+    }
   }, [messages]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
@@ -257,22 +353,31 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     setUser(sessionData.user);
   }, []);
 
+  // useEffect(() => {
+  //   if (!chatLoading) {
+
+  //   }
+  // }, [messages, chatLoading]);
+
   const loadRoomData = async () => {
+    if (!currentRoom) {
+      setMessages([]);
+      return;
+    }
     try {
-      // const rooms = JSON.parse(localStorage.getItem("room-data") || "{}");
-      // const data = rooms[currentRoom] ?? [];
-      // setMessages(data.filter((e: MessageObject) => e.type !== "system"));
-      if (currentRoom) {
-        const response = await fetch("/api/chat/" + currentRoom);
-        const data = (await response.json()) as Message[];
-        setMessages(
-          data.filter((message: Message) => message.type !== "system"),
-        );
-      } else {
-        setMessages([]);
+      setChatLoading(true);
+      setChatError(null);
+
+      const response = await fetch(`/api/chat/${currentRoom}`);
+      if (!response.ok) {
+        throw new Error("Failed to load messages");
       }
+      const data = (await response.json()) as Message[];
+      setMessages(data.filter((message: Message) => message.type !== "system"));
     } catch (e) {
-      alert(String(e));
+      setChatError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -332,7 +437,16 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
             >
               <div className="max-w-lg mx-auto w-full justify-end flex flex-col min-h-full">
-                <MessageContainer messages={messages} user={sessionData.user} />
+                {chatLoading ? (
+                  <MessageSkeleton />
+                ) : chatError ? (
+                  <div>{chatError}</div>
+                ) : (
+                  <MessageContainer
+                    messages={messages}
+                    user={sessionData.user}
+                  />
+                )}
                 <div ref={messagesEndRef} />
               </div>
             </div>
@@ -342,6 +456,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 message={messageContent}
                 onMessageChange={setMessageContent}
                 onMessageSend={handleSendMessage}
+                disabled={chatLoading}
               />
             </div>
           </>

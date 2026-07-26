@@ -41,19 +41,6 @@ export async function GET(request: Request, { params }: { params: Params }) {
       return NextResponse.json({ error: "Room not found!" }, { status: 404 });
     }
 
-    //     "user_id": "GDrFlANiM0YE1eqgfRFJhk6vzWR9xUUK",
-    // "room": "Room 2",
-    // "type": "normal",
-    // "content": "hi",
-    // "created_at": 1784984478434,
-    // "id": "GDrFlANiM0YE1eqgfRFJhk6vzWR9xUUK",
-    // "name": "U1user",
-    // "email": "user1@gmail.com",
-    // "emailVerified": 0,
-    // "image": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10",
-    // "createdAt": "2026-07-19T12:23:19.803Z",
-    // "updatedAt": "2026-07-19T12:23:19.803Z"
-
     const messages = rows.map((row: any) => ({
       id: row.message_id,
       room: row.room,
