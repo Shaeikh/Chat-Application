@@ -238,7 +238,7 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
   const container = groups.map((group) => (
     <div key={group.date}>
       <div className="sticky top-0 z-20 text-center">
-        <Badge className="backdrop-blur-2xl ">{group.date}</Badge>
+        <Badge>{group.date}</Badge>
       </div>
       {group.messages.map((msg, index) => {
         const previous = messages[index - 1];
@@ -270,7 +270,12 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
 
         const messageBody = isNormalMessage ? (
           <Message
-            className={cn("transition-all", sameAsPrevious ? "mt-1" : "mt-6")}
+            className={cn(
+              "transition-all",
+              sameAsPrevious ? "mt-1" : "mt-6",
+              `${isCurrentFocused ? "z-20 scale-[1.02] shadow-xl" : ""}
+                      ${isAnyMessageFocused && !isCurrentFocused ? "blur-xs opacity-40 select-none cursor-default" : ""}`,
+            )}
             align={user?.id === msg.user?.id ? "end" : "start"}
           >
             {showAvatar ? (
@@ -323,8 +328,6 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
                     onOpenChangeComplete={() => handleContextMenu(msg.id)}
                   >
                     <BubbleContent
-                      className={`${isCurrentFocused ? "z-20 scale-[1.02] shadow-xl ring-2 ring-red-400 " : ""}
-                      ${isAnyMessageFocused && !isCurrentFocused ? "blur-xs opacity-40 select-none cursor-default" : ""}`}
                       render={
                         <ContextMenuTrigger
                         // onContextMenu={(e) => {
