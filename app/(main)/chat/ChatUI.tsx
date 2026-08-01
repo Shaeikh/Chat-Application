@@ -56,7 +56,7 @@ interface RoomProps {
 }
 
 type Message = {
-  user?: User;
+  user: User;
   room: string;
   type: "normal" | "system";
   id: string | undefined;
@@ -202,13 +202,31 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
             <div className="w-10 shrink-0" />
           )}
 
-          <Bubble
-            onMouseEnter={() => handleMouseEnterMessage(msg)}
-            onMouseLeave={handleMouseLeaveMessage}
+          <div
+            className={cn(
+              "flex items-end gap-2",
+              user.id === msg.user.id ? "justify-end" : "justify-start",
+            )}
           >
-            <BubbleContent>{msg.content}</BubbleContent>
-          </Bubble>
-          {/* <MessageFooter>Delivered</MessageFooter> */}
+            {user.id === msg.user.id && (
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                10:34 PM
+              </span>
+            )}
+
+            <Bubble
+              onMouseEnter={() => handleMouseEnterMessage(msg)}
+              onMouseLeave={handleMouseLeaveMessage}
+            >
+              <BubbleContent>{msg.content}</BubbleContent>
+            </Bubble>
+
+            {user.id !== msg.user.id && (
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                10:34 PM
+              </span>
+            )}
+          </div>
         </MessageContent>
       </Message>
     ) : (
