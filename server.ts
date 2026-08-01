@@ -5,31 +5,55 @@ import db from "./lib/db";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
-const port = 3000;
-// when using middleware `hostname` and `port` must be provided below
-const app = next({ dev, hostname, port, turbo: true, turbopack: true });
-const handler = app.getRequestHandler();
 
-app.prepare().then(() => {
-  const httpServer = createServer(handler);
+// Frontend runs on 3000, Socket server runs on 4000 during dev
+const PORT = dev ? 4000 : 3000;
 
-  const io = new Server(httpServer);
+if (!dev) {
+  // Production Monolith Setup
+  const app = next({ dev, hostname, port: PORT });
+  const handler = app.getRequestHandler();
+
+  app.prepare().then(() => {
+    const httpServer = createServer(handler);
+    setupSockets(httpServer);
+    httpServer.listen(PORT, () =>
+      console.log(`> Monolith active on port ${PORT}`),
+    );
+  });
+} else {
+  // Fast Dev Mode Setup (Isolate Sockets from NextJS .next/ directory)
+  const httpServer = createServer((req, res) => {
+    res.writeHead(404);
+    res.end();
+  });
+  setupSockets(httpServer);
+  httpServer.listen(PORT, () =>
+    console.log(`> Socket.IO backend active on port ${PORT}`),
+  );
+}
+
+function setupSockets(httpServer: any) {
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "http://localhost:3000", // Allow Next.js HMR client to connect
+      methods: ["GET", "POST"],
+    },
+  });
+
   io.on("connection", (socket) => {
-    // socket.onAny((event, ...args) => {
-    //   console.log("EVENT:", event, args);
-    // });
     console.log("User Connected:", socket.id);
 
     socket.on("room-joined", (roomName) => {
       socket.join(roomName);
     });
+
     socket.on("send-message", (message) => {
       try {
         const query = db.prepare(`
-      INSERT INTO messages
-      (id, user_id, room, type, content, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+          INSERT INTO messages (id, user_id, room, type, content, created_at)
+          VALUES (?, ?, ?, ?, ?, ?)
+        `);
 
         query.run(
           message.id,
@@ -39,6 +63,7 @@ app.prepare().then(() => {
           message.content,
           message.createdAt,
         );
+        query.finalize();
 
         io.to(message.room).emit("receive-message", message);
       } catch (err) {
@@ -46,12 +71,4 @@ app.prepare().then(() => {
       }
     });
   });
-  httpServer
-    .once("error", (err) => {
-      console.error(err);
-      process.exit(1);
-    })
-    .listen(port, () => {
-      console.log(`> Ready on http://${hostname}:${port}`);
-    });
-});
+}

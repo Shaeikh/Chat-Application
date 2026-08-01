@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "bun --bun server.ts",
+    "dev": "concurrently \"next dev --turbo\" \"bun --watch server.ts\"",
     "build": "next build",
-    "start": "NODE_ENV=production bun --bun server.ts",
+    "start": "bun server.ts",
     "lint": "eslint"
   },
   "dependencies": {
