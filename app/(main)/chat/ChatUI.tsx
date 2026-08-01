@@ -160,6 +160,23 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
     const showAvatar = !nextGrouped;
     const showUsername = !previousGrouped;
 
+    let hoverTimer: any;
+
+    const handleMouseEnterMessage = (message: Message) => {
+      clearTimeout(hoverTimer);
+      hoverTimer = setTimeout(() => {
+        console.log(
+          new Date(message.createdAt).toLocaleTimeString(undefined, {
+            timeStyle: "short",
+          }),
+        );
+      }, 500);
+    };
+
+    const handleMouseLeaveMessage = () => {
+      clearTimeout(hoverTimer);
+    };
+
     const messageBody = isNormalMessage ? (
       <Message
         className={cn("transition-all", sameAsPrevious ? "mt-1" : "mt-6")}
@@ -185,7 +202,10 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
             <div className="w-10 shrink-0" />
           )}
 
-          <Bubble>
+          <Bubble
+            onMouseEnter={() => handleMouseEnterMessage(msg)}
+            onMouseLeave={handleMouseLeaveMessage}
+          >
             <BubbleContent>{msg.content}</BubbleContent>
           </Bubble>
           {/* <MessageFooter>Delivered</MessageFooter> */}
@@ -361,7 +381,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     }
     try {
       setChatError(null);
-
+      setChatLoading(true);
       const response = await fetch(`/api/chat/${currentRoom}`);
       if (!response.ok) {
         throw new Error("Failed to load messages");
@@ -382,18 +402,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   useEffect(() => {
     const handleReceiveMessage = (message: Message) => {
       const room = message.room;
-
-      // const existingRoomData = JSON.parse(
-      //   localStorage.getItem("room-data") || "{}",
-      // );
-
-      // if (!existingRoomData[room]) {
-      //   existingRoomData[room] = [];
-      // }
-
-      // if (message.type !== "system") existingRoomData[room].push(message);
-
-      // localStorage.setItem("room-data", JSON.stringify(existingRoomData));
       setMessages((prev) => (room === currentRoom ? [...prev, message] : prev));
     };
 
