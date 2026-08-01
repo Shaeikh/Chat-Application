@@ -136,6 +136,12 @@ function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
 }
 
 function MessageContainer({ messages, user }: MessageContainerProps) {
+  interface Timestamps {
+    messageID: string | undefined;
+    time: string;
+  }
+  const [timestamps, setTimestamps] = useState<Timestamps>();
+
   const container = messages.map((msg, index) => {
     const previous = messages[index - 1];
     const next = messages[index + 1];
@@ -170,11 +176,18 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
             timeStyle: "short",
           }),
         );
+        setTimestamps({
+          messageID: message.id,
+          time: new Date(message.createdAt).toLocaleTimeString(undefined, {
+            timeStyle: "short",
+          }),
+        });
       }, 500);
     };
 
     const handleMouseLeaveMessage = () => {
       clearTimeout(hoverTimer);
+      setTimestamps(undefined);
     };
 
     const messageBody = isNormalMessage ? (
@@ -209,8 +222,15 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
             )}
           >
             {user.id === msg.user.id && (
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                10:34 PM
+              <span
+                className={cn(
+                  "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
+                  timestamps?.messageID === msg.id
+                    ? "opacity-100"
+                    : "opacity-0",
+                )}
+              >
+                {timestamps?.messageID === msg.id ? timestamps?.time : ""}
               </span>
             )}
 
@@ -222,8 +242,15 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
             </Bubble>
 
             {user.id !== msg.user.id && (
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                10:34 PM
+              <span
+                className={cn(
+                  "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
+                  timestamps?.messageID === msg.id
+                    ? "opacity-100"
+                    : "opacity-0",
+                )}
+              >
+                {timestamps?.messageID === msg.id ? timestamps?.time : ""}
               </span>
             )}
           </div>
