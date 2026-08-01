@@ -41,6 +41,20 @@ import { authClient } from "@/lib/auth-client";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  ClipboardPasteIcon,
+  CopyIcon,
+  ScissorsIcon,
+  TrashIcon,
+} from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuGroup,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 interface MessageInputProps {
   message: string | "";
@@ -190,6 +204,14 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
       setTimestamps(undefined);
     };
 
+    function copyText(text: string) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(text)
+          .catch((err) => console.error("Error copying:", err));
+      }
+    }
+
     const messageBody = isNormalMessage ? (
       <Message
         className={cn("transition-all", sameAsPrevious ? "mt-1" : "mt-6")}
@@ -238,7 +260,37 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
               onMouseEnter={() => handleMouseEnterMessage(msg)}
               onMouseLeave={handleMouseLeaveMessage}
             >
-              <BubbleContent>{msg.content}</BubbleContent>
+              <ContextMenu>
+                <BubbleContent render={<ContextMenuTrigger />}>
+                  {msg.content}
+                </BubbleContent>
+                <ContextMenuContent>
+                  <ContextMenuGroup>
+                    <ContextMenuItem onClick={() => copyText(msg.content)}>
+                      <CopyIcon />
+                      Copy
+                    </ContextMenuItem>
+                    <ContextMenuItem>
+                      <ScissorsIcon />
+                      Cut
+                    </ContextMenuItem>
+                    <ContextMenuItem>
+                      <ClipboardPasteIcon />
+                      Paste
+                    </ContextMenuItem>
+                  </ContextMenuGroup>
+                  <ContextMenuSeparator />
+                  <ContextMenuGroup>
+                    <ContextMenuItem
+                      variant="destructive"
+                      onClick={() => console.log(msg.content)}
+                    >
+                      <TrashIcon />
+                      Delete
+                    </ContextMenuItem>
+                  </ContextMenuGroup>
+                </ContextMenuContent>
+              </ContextMenu>
             </Bubble>
 
             {user.id !== msg.user.id && (
