@@ -33,7 +33,8 @@ export async function GET(request: Request, { params }: { params: Params }) {
         FROM messages m
         LEFT JOIN user u
         ON m.user_id = u.id
-        WHERE m.room = ?;`,
+        WHERE m.room = ?
+        ORDER BY m.created_at ASC`,
       )
       .all(room);
 
