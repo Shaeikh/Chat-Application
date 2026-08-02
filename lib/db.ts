@@ -17,8 +17,10 @@ CREATE TABLE IF NOT EXISTS messages (
     type TEXT NOT NULL CHECK(type IN ('normal', 'system')),
     content TEXT NOT NULL,
     created_at INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id) 
 );
+CREATE INDEX IF NOT EXISTS messages_room_id_idx
+    ON messages(room, id)
 `,
 );
 

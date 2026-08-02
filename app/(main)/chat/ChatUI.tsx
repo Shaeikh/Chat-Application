@@ -34,11 +34,11 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type UIEvent } from "react";
 import { useRouter } from "next/navigation";
 import { socket } from "@/lib/socket";
 import { authClient } from "@/lib/auth-client";
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4, v7 as uuidv7 } from "uuid";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -56,6 +56,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { Badge } from "@/components/ui/badge";
+import { flushSync } from "react-dom";
 
 interface MessageInputProps {
   message: string | "";
@@ -160,19 +161,7 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
     "",
   );
 
-  const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
-
-  const handleContextMenu = (messageID?: string) => {
-    if (contextMenuOpen) {
-      setFocusedMessageId("");
-      setContextMenuOpen(false);
-    } else {
-      setFocusedMessageId(messageID);
-      setContextMenuOpen(true);
-    }
-  };
   let hoverTimer: any;
-
   const handleMouseEnterMessage = (message: Message) => {
     clearTimeout(hoverTimer);
     hoverTimer = setTimeout(() => {
@@ -504,6 +493,8 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatLoaded, setChatLoaded] = useState<boolean>(false);
+  const [loadingPrevMessages, setLoadingPrevMessages] = useState(false);
+  const [allChatMessagesLoaded, setAllChatMessagesLoaded] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -517,9 +508,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       });
     }
   }, [chatLoaded, messages]);
-
-  useEffect(() => {}, [messages]);
-
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // useEffect(() => {
@@ -539,7 +527,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       user: sessionData?.user,
       room: currentRoom,
       type: "normal",
-      id: uuidv4(),
+      id: uuidv7(),
       content: messageContent.trim(),
       createdAt: Date.now(),
     };
@@ -554,7 +542,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       user: "System",
       room: name,
       type: "system",
-      id: uuidv4(),
+      id: uuidv7(),
       content: `${sessionData?.user.name} has Joined the room`,
       createdAt: Date.now(),
     };
@@ -589,6 +577,28 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
         setChatLoaded(false);
       }, 500);
     }
+  };
+
+  const loadPreviousMessages = async () => {
+    const container = messagesContainerRef.current;
+    const previousScrollHeight = container?.scrollHeight || 0;
+    const response = await fetch(
+      `/api/chat/${currentRoom}?before=${messages[0].id}`,
+    );
+    if (!response.ok) {
+      throw new Error("Failed to load messages");
+    }
+    const data = (await response.json()) as Message[];
+    if (data.length === 0) {
+      setAllChatMessagesLoaded(true);
+    }
+    flushSync(() => {
+      setMessages((prev) => [...data, ...prev]);
+    });
+
+    setLoadingPrevMessages(false);
+    const newScrollHeight = container?.scrollHeight || 0;
+    container!.scrollTop += newScrollHeight - previousScrollHeight;
   };
 
   useEffect(() => {
@@ -633,6 +643,16 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
             <div
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
+              onScroll={(e) => {
+                if (
+                  e.currentTarget.scrollTop <= 100 &&
+                  !loadingPrevMessages &&
+                  !allChatMessagesLoaded
+                ) {
+                  setLoadingPrevMessages(true);
+                  loadPreviousMessages();
+                }
+              }}
             >
               <div className="max-w-lg mx-auto w-full justify-end flex flex-col min-h-full">
                 {chatLoading ? (

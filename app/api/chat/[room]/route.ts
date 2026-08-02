@@ -1,11 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import db from "@/lib/db";
 
 type Params = Promise<{ room: string }>;
 
-export async function GET(request: Request, { params }: { params: Params }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Params },
+) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -14,29 +17,41 @@ export async function GET(request: Request, { params }: { params: Params }) {
   }
   const { room } = await params;
 
+  const searchParam = request.nextUrl.searchParams;
+  const before = searchParam.get("before");
+
   try {
+    const params = [room];
+    if (before) params.push(before);
+    console.log(">>>>PARAMS", ...params);
     const rows = db
       .query(
-        `SELECT
-        m.id AS message_id,
-        m.room,
-        m.type,
-        m.content,
-        m.created_at AS message_created_at,
-
-        u.id AS user_id,
-        u.name,
-        u.email,
-        u.image,
-        u.createdAt AS user_created_at,
-        u.updatedAt AS user_updated_at
-        FROM messages m
-        LEFT JOIN user u
-        ON m.user_id = u.id
-        WHERE m.room = ?
-        ORDER BY m.created_at ASC`,
+        `
+        SELECT   *
+        FROM     (
+                  SELECT    m.id AS message_id,
+                            m.room,
+                            m.type,
+                            m.content,
+                            m.created_at AS message_created_at,
+                            u.id         AS user_id,
+                            u.NAME,
+                            u.email,
+                            u.image,
+                            u.createdat AS user_created_at,
+                            u.updatedat AS user_updated_at
+                  FROM      messages m
+                  LEFT JOIN USER u
+                  ON        m.user_id = u.id
+                  WHERE     m.room = ?
+                  AND       m.type != "system" 
+                  ${before ? "AND m.id < ?" : ""}
+                  ORDER BY  m.id DESC limit 100
+                  )
+        ORDER BY message_id ASC
+        `,
       )
-      .all(room);
+      .all(...params);
 
     if (!rows) {
       return NextResponse.json({ error: "Room not found!" }, { status: 404 });
