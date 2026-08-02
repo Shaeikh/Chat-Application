@@ -7,7 +7,7 @@ import {
   BubbleGroup,
   BubbleReactions,
 } from "@/components/ui/bubble";
-import { Marker, MarkerContent } from "@/components/ui/marker";
+import { Marker, MarkerContent, MarkerIcon } from "@/components/ui/marker";
 import {
   Message,
   MessageAvatar,
@@ -57,6 +57,9 @@ import {
 } from "@/components/ui/context-menu";
 import { Badge } from "@/components/ui/badge";
 import { flushSync } from "react-dom";
+import { Spinner } from "@/components/ui/spinner";
+import { MorphingRing } from "@/components/ui/morphing-ring";
+import { TripleDotSpinner } from "@/components/ui/triple-dot-spinner";
 
 interface MessageInputProps {
   message: string | "";
@@ -651,10 +654,16 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 ) {
                   setLoadingPrevMessages(true);
                   loadPreviousMessages();
+                  setTimeout(() => {}, 5000);
                 }
               }}
             >
               <div className="max-w-lg mx-auto w-full justify-end flex flex-col min-h-full">
+                {loadingPrevMessages && (
+                  <div className="mt-3 mb-5 mx-auto">
+                    <TripleDotSpinner />
+                  </div>
+                )}
                 {chatLoading ? (
                   <MessageSkeleton />
                 ) : chatError ? (

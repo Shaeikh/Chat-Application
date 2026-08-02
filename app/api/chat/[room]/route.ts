@@ -46,7 +46,7 @@ export async function GET(
                   WHERE     m.room = ?
                   AND       m.type != "system" 
                   ${before ? "AND m.id < ?" : ""}
-                  ORDER BY  m.id DESC limit 100
+                  ORDER BY  m.id DESC limit 20
                   )
         ORDER BY message_id ASC
         `,
