@@ -555,6 +555,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
   useEffect(() => {
     loadRoomData();
+    setAllChatMessagesLoaded(false);
   }, [currentRoom]);
 
   const loadRoomData = async () => {
@@ -592,13 +593,13 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       throw new Error("Failed to load messages");
     }
     const data = (await response.json()) as Message[];
+
     if (data.length === 0) {
       setAllChatMessagesLoaded(true);
     }
     flushSync(() => {
       setMessages((prev) => [...data, ...prev]);
     });
-
     setLoadingPrevMessages(false);
     const newScrollHeight = container?.scrollHeight || 0;
     container!.scrollTop += newScrollHeight - previousScrollHeight;
@@ -644,6 +645,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
         {currentRoom && sessionData.user && (
           <>
             <div
+              key={currentRoom} // so the states go back to default the second the room is changed
               ref={messagesContainerRef}
               className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
               onScroll={(e) => {

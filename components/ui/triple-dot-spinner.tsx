@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 export const TripleDotSpinner = () => {
   return (
     <motion.div
-      className="relative w-10 h-10"
+      className="relative w-10 h-10 scale-75"
       animate={{ rotate: 360 }}
       transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
     >
