@@ -163,13 +163,12 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
   const [contextMenuOpen, setContextMenuOpen] = useState<boolean>(false);
 
   const handleContextMenu = (messageID?: string) => {
-    console.log("state changed");
-    if (!contextMenuOpen) {
-      setFocusedMessageId(messageID);
-      setContextMenuOpen(true);
-    } else {
+    if (contextMenuOpen) {
       setFocusedMessageId("");
       setContextMenuOpen(false);
+    } else {
+      setFocusedMessageId(messageID);
+      setContextMenuOpen(true);
     }
   };
   let hoverTimer: any;
@@ -273,8 +272,10 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
             className={cn(
               "transition-all",
               sameAsPrevious ? "mt-1" : "mt-6",
-              `${isCurrentFocused ? "z-20 scale-[1.02] shadow-xl" : ""}
-                      ${isAnyMessageFocused && !isCurrentFocused ? "blur-xs opacity-40 select-none cursor-default" : ""}`,
+              isCurrentFocused && "z-20 scale-[1.02]",
+              isAnyMessageFocused &&
+                !isCurrentFocused &&
+                "blur-xs opacity-40 select-none cursor-default",
             )}
             align={user?.id === msg.user?.id ? "end" : "start"}
           >
@@ -325,14 +326,18 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
                   onMouseLeave={handleMouseLeaveMessage}
                 >
                   <ContextMenu
-                    onOpenChangeComplete={() => handleContextMenu(msg.id)}
+                    onOpenChange={(open) => {
+                      if (open) setFocusedMessageId(msg.id);
+                      else setFocusedMessageId("");
+                    }}
+                    // onOpenChangeComplete={() => handleContextMenu(msg.id)}
                   >
                     <BubbleContent
                       render={
                         <ContextMenuTrigger
                         // onContextMenu={(e) => {
                         //   e.preventDefault();
-                        //   setFocusedMessageId(msg.id);
+                        //   handleContextMenu(msg.id);
                         // }}
                         />
                       }

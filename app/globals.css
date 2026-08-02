@@ -5,6 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --animate-tap: insta-tap 0.15s ease-out 1;
+
+  @keyframes tap {
+    0%,
+    100% {
+      transform: scale(1);
+    }
+    40% {
+      transform: scale(1.06, 0.92);
+    } /* Subtle mash (wider & shorter) */
+    70% {
+      transform: scale(0.97, 1.03);
+    } /* Light bounce recoil */
+  }
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
