@@ -49,9 +49,9 @@ function setupSockets(httpServer: any) {
     });
 
     socket.on("typing", (data) => {
-      console.log("SERVER GOT typing", data);
-      console.log("ROOM:", data.roomID);
-      console.log("ROOM MEMBERS:", io.sockets.adapter.rooms.get(data.roomID));
+      // console.log("SERVER GOT typing", data);
+      // console.log("ROOM:", data.roomID);
+      // console.log("ROOM MEMBERS:", io.sockets.adapter.rooms.get(data.roomID));
 
       socket.to(data.roomID).emit("user-typing", data);
     });
@@ -77,6 +77,13 @@ function setupSockets(httpServer: any) {
       } catch (err) {
         console.error("MESSAGE ERROR:", err);
       }
+    });
+
+    socket.on("message-delete", (user, message) => {
+      console.log(user, message);
+      if (user.id !== message.user.id || !message || !user) return;
+      console.log("deleted message");
+      db.run("DELETE FROM messages WHERE id = ?", [message.id]);
     });
   });
 }

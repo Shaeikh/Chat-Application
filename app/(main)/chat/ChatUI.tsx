@@ -42,8 +42,11 @@ import { v4 as uuidv4, v7 as uuidv7 } from "uuid";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  CalendarIcon,
   ClipboardPasteIcon,
   CopyIcon,
+  Edit,
+  EditIcon,
   ScissorsIcon,
   TrashIcon,
 } from "lucide-react";
@@ -277,6 +280,12 @@ function MessageContainer({
     };
   }, [groups]);
 
+  const handleMessageDelete = (user: User, message: Message) => {
+    if (!message) return;
+    console.log("message delete emitted");
+    socket.emit("message-delete", user, message);
+  };
+
   const container = groups.map((group) => (
     <div key={group.date}>
       <div
@@ -392,29 +401,34 @@ function MessageContainer({
                     </BubbleContent>
                     <ContextMenuContent>
                       <ContextMenuGroup>
-                        <ContextMenuItem onClick={() => copyText(msg.content)}>
-                          <CopyIcon />
-                          Copy
-                        </ContextMenuItem>
-                        <ContextMenuItem>
-                          <ScissorsIcon />
-                          Cut
-                        </ContextMenuItem>
-                        <ContextMenuItem>
-                          <ClipboardPasteIcon />
-                          Paste
+                        <ContextMenuItem disabled>
+                          <CalendarIcon />
+                          {new Date(msg.createdAt).toLocaleString(undefined, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                         </ContextMenuItem>
                       </ContextMenuGroup>
                       <ContextMenuSeparator />
                       <ContextMenuGroup>
+                        <ContextMenuItem>
+                          <EditIcon />
+                          Edit
+                        </ContextMenuItem>
+                        <ContextMenuItem onClick={() => copyText(msg.content)}>
+                          <CopyIcon />
+                          Copy
+                        </ContextMenuItem>
+                      </ContextMenuGroup>
+                      {user.id === msg.user.id && (
                         <ContextMenuItem
                           variant="destructive"
-                          onClick={() => console.log(msg.content)}
+                          onClick={() => handleMessageDelete(user, msg)}
                         >
                           <TrashIcon />
                           Delete
                         </ContextMenuItem>
-                      </ContextMenuGroup>
+                      )}
                     </ContextMenuContent>
                   </ContextMenu>
                 </Bubble>
