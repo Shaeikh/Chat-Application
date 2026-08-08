@@ -231,9 +231,58 @@ function MessageContainer({
     }
   }
 
+  useEffect(() => {
+    let scrollTimeout: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      document.querySelectorAll<HTMLElement>(".sticky-badge").forEach((el) => {
+        el.classList.remove(
+          "-translate-y-12",
+          "opacity-0",
+          "pointer-events-none",
+        );
+        el.classList.add("translate-y-0", "opacity-100");
+      });
+
+      clearTimeout(scrollTimeout);
+
+      scrollTimeout = setTimeout(() => {
+        document
+          .querySelectorAll<HTMLElement>(".sticky-badge")
+          .forEach((el) => {
+            const parentContainer =
+              el.closest(".overflow-y-auto") || document.documentElement;
+            const containerTop = parentContainer.getBoundingClientRect().top;
+            const badgeTop = el.getBoundingClientRect().top;
+
+            const isStuckAtTop = Math.abs(badgeTop - containerTop) <= 2;
+
+            if (isStuckAtTop) {
+              el.classList.remove("translate-y-0", "opacity-100");
+              el.classList.add(
+                "-translate-y-12",
+                "opacity-0",
+                "pointer-events-none",
+              );
+            }
+          });
+      }, 2000);
+    };
+
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      clearTimeout(scrollTimeout);
+    };
+  }, [groups]);
+
   const container = groups.map((group) => (
     <div key={group.date}>
-      <div className="sticky top-0 z-20 text-center">
+      <div
+        id={group.date}
+        className="sticky-badge sticky top-0 z-20 text-center transform translate-y-0 transition-all duration-500 ease-in-out"
+      >
         <Badge>{group.date}</Badge>
       </div>
       {group.messages.map((msg, index) => {
