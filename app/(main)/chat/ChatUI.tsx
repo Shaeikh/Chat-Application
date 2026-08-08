@@ -286,9 +286,8 @@ function MessageContainer({
   const handleMessageDelete = (user: User, message: Message) => {
     if (!message) return;
     socket.emit("message-delete", user, message);
-    flushSync(() => {
-      handleMessages((prev) => prev.filter((msg) => msg != message));
-    });
+    setFocusedMessageId((current) => (current === message.id ? "" : current));
+    handleMessages((prev) => prev.filter((msg) => msg !== message));
   };
 
   const container = groups.map((group) => (
@@ -300,8 +299,8 @@ function MessageContainer({
         <Badge>{group.date}</Badge>
       </div>
       {group.messages.map((msg, index) => {
-        const previous = messages[index - 1];
-        const next = messages[index + 1];
+        const previous = group.messages[index - 1];
+        const next = group.messages[index + 1];
 
         const sameAsPrevious = previous?.user?.id === msg?.user?.id;
         const sameAsNext = next?.user?.id === msg?.user?.id;
@@ -317,145 +316,148 @@ function MessageContainer({
         const previousGrouped =
           previous &&
           previous.user?.id === msg.user?.id &&
-          new Date(previous.createdAt).getTime() -
-            new Date(msg.createdAt).getTime() <
-            MAX_GAP;
+          Math.abs(
+            new Date(msg.createdAt).getTime() -
+              new Date(previous.createdAt).getTime(),
+          ) < MAX_GAP;
 
-        const showAvatar = !nextGrouped;
         const showUsername = !previousGrouped;
+        const showAvatar = !previousGrouped;
 
         const isCurrentFocused = focusedMessageId === msg.id;
         const isAnyMessageFocused = focusedMessageId;
 
-        const messageBody = isNormalMessage ? (
-          <Message
-            className={cn(
-              "transition-all",
-              sameAsPrevious ? "mt-1" : "mt-6",
-              isCurrentFocused && "z-20 scale-[1.02]",
-              isAnyMessageFocused &&
-                !isCurrentFocused &&
-                "blur-xs opacity-40 select-none cursor-default",
-            )}
-            align={user?.id === msg.user?.id ? "end" : "start"}
-          >
-            {showAvatar ? (
-              <MessageAvatar>
-                <Avatar>
-                  {msg?.user?.image && (
-                    <AvatarImage
-                      src={`${msg.user?.image}`}
-                      alt={msg.user?.name}
-                    />
-                  )}
-                  <AvatarFallback>{msg.user?.name?.slice(0, 2)}</AvatarFallback>
-                </Avatar>
-              </MessageAvatar>
-            ) : (
-              <MessageAvatar />
-            )}
-
-            <MessageContent>
-              {showUsername ? (
-                <MessageHeader>{msg.user?.name}</MessageHeader>
+        const messageBody =
+          isNormalMessage && msg ? (
+            <Message
+              className={cn(
+                "transition-all",
+                sameAsPrevious ? "mt-1" : "mt-6",
+                isCurrentFocused && "z-20 scale-[1.02]",
+                isAnyMessageFocused &&
+                  !isCurrentFocused &&
+                  "blur-xs opacity-40 select-none cursor-default",
+              )}
+              align={user?.id === msg.user?.id ? "end" : "start"}
+            >
+              {showAvatar ? (
+                <MessageAvatar>
+                  <Avatar>
+                    {msg.user?.image && (
+                      <AvatarImage src={msg.user.image} alt={msg.user.name} />
+                    )}
+                    <AvatarFallback>
+                      {msg.user?.name?.slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                </MessageAvatar>
               ) : (
-                <div className="w-10 shrink-0" />
+                <MessageAvatar />
               )}
 
-              <div
-                className={cn(
-                  "flex items-end gap-2",
-                  user.id === msg.user.id ? "justify-end" : "justify-start",
-                )}
-              >
-                {user.id === msg.user.id && (
-                  <span
-                    className={cn(
-                      "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
-                      timestamps?.messageID === msg.id
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
-                  >
-                    {timestamps?.messageID === msg.id ? timestamps?.time : ""}
-                  </span>
+              <MessageContent>
+                {showUsername ? (
+                  <MessageHeader>{msg.user?.name}</MessageHeader>
+                ) : (
+                  <div className="w-10 shrink-0" />
                 )}
 
-                <Bubble
-                  onMouseEnter={() => handleMouseEnterMessage(msg)}
-                  onMouseLeave={handleMouseLeaveMessage}
+                <div
+                  className={cn(
+                    "flex items-end gap-2",
+                    user.id === msg.user.id ? "justify-end" : "justify-start",
+                  )}
                 >
-                  <ContextMenu
-                    onOpenChange={(open) => {
-                      if (open) setFocusedMessageId(msg.id);
-                      else setFocusedMessageId("");
-                    }}
-                    // onOpenChangeComplete={() => handleContextMenu(msg.id)}
-                  >
-                    <BubbleContent
-                      render={
-                        <ContextMenuTrigger
-                        // onContextMenu={(e) => {
-                        //   e.preventDefault();
-                        //   handleContextMenu(msg.id);
-                        // }}
-                        />
-                      }
-                    >
-                      {msg.content}
-                    </BubbleContent>
-                    <ContextMenuContent>
-                      <ContextMenuGroup>
-                        <ContextMenuItem disabled>
-                          <CalendarIcon />
-                          {new Date(msg.createdAt).toLocaleString(undefined, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </ContextMenuItem>
-                      </ContextMenuGroup>
-                      <ContextMenuSeparator />
-                      <ContextMenuGroup>
-                        <ContextMenuItem>
-                          <EditIcon />
-                          Edit
-                        </ContextMenuItem>
-                        <ContextMenuItem onClick={() => copyText(msg.content)}>
-                          <CopyIcon />
-                          Copy
-                        </ContextMenuItem>
-                      </ContextMenuGroup>
-                      {user.id === msg.user.id && (
-                        <ContextMenuItem
-                          variant="destructive"
-                          onClick={() => handleMessageDelete(user, msg)}
-                        >
-                          <TrashIcon />
-                          Delete
-                        </ContextMenuItem>
+                  {user.id === msg.user.id && (
+                    <span
+                      className={cn(
+                        "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
+                        timestamps?.messageID === msg.id
+                          ? "opacity-100"
+                          : "opacity-0",
                       )}
-                    </ContextMenuContent>
-                  </ContextMenu>
-                </Bubble>
+                    >
+                      {timestamps?.messageID === msg.id ? timestamps?.time : ""}
+                    </span>
+                  )}
 
-                {user.id !== msg.user.id && (
-                  <span
-                    className={cn(
-                      "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
-                      timestamps?.messageID === msg.id
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
+                  <Bubble
+                    onMouseEnter={() => handleMouseEnterMessage(msg)}
+                    onMouseLeave={handleMouseLeaveMessage}
                   >
-                    {timestamps?.messageID === msg.id ? timestamps?.time : ""}
-                  </span>
-                )}
-              </div>
-            </MessageContent>
-          </Message>
-        ) : (
-          <div className="text-center">{msg.content}</div>
-        );
+                    <ContextMenu
+                      onOpenChange={(open) => {
+                        if (open) setFocusedMessageId(msg.id);
+                        else setFocusedMessageId("");
+                      }}
+                      // onOpenChangeComplete={() => handleContextMenu(msg.id)}
+                    >
+                      <BubbleContent
+                        render={
+                          <ContextMenuTrigger
+                          // onContextMenu={(e) => {
+                          //   e.preventDefault();
+                          //   handleContextMenu(msg.id);
+                          // }}
+                          />
+                        }
+                      >
+                        {msg.content}
+                      </BubbleContent>
+                      <ContextMenuContent>
+                        <ContextMenuGroup>
+                          <ContextMenuItem disabled>
+                            <CalendarIcon />
+                            {new Date(msg.createdAt).toLocaleString(undefined, {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </ContextMenuItem>
+                        </ContextMenuGroup>
+                        <ContextMenuSeparator />
+                        <ContextMenuGroup>
+                          <ContextMenuItem>
+                            <EditIcon />
+                            Edit
+                          </ContextMenuItem>
+                          <ContextMenuItem
+                            onClick={() => copyText(msg.content)}
+                          >
+                            <CopyIcon />
+                            Copy
+                          </ContextMenuItem>
+                        </ContextMenuGroup>
+                        {user.id === msg.user.id && (
+                          <ContextMenuItem
+                            variant="destructive"
+                            onClick={() => handleMessageDelete(user, msg)}
+                          >
+                            <TrashIcon />
+                            Delete
+                          </ContextMenuItem>
+                        )}
+                      </ContextMenuContent>
+                    </ContextMenu>
+                  </Bubble>
+
+                  {user.id !== msg.user.id && (
+                    <span
+                      className={cn(
+                        "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
+                        timestamps?.messageID === msg.id
+                          ? "opacity-100"
+                          : "opacity-0",
+                      )}
+                    >
+                      {timestamps?.messageID === msg.id ? timestamps?.time : ""}
+                    </span>
+                  )}
+                </div>
+              </MessageContent>
+            </Message>
+          ) : (
+            <div className="text-center">{msg.content}</div>
+          );
 
         return (
           <div key={msg.id}>
