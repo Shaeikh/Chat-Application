@@ -63,6 +63,7 @@ import { flushSync } from "react-dom";
 import { Spinner } from "@/components/ui/spinner";
 import { MorphingRing } from "@/components/ui/morphing-ring";
 import { TripleDotSpinner } from "@/components/ui/triple-dot-spinner";
+import { PreviewCard } from "@base-ui/react";
 
 interface MessageInputProps {
   message: string | "";
@@ -98,6 +99,7 @@ interface User {
 
 interface MessageContainerProps {
   messages: Message[];
+  handleMessages: (updater: (prev: Message[]) => Message[]) => void;
   user: User;
   typingUsers: User[];
 }
@@ -160,6 +162,7 @@ function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
 
 function MessageContainer({
   messages,
+  handleMessages,
   user,
   typingUsers,
 }: MessageContainerProps) {
@@ -282,8 +285,10 @@ function MessageContainer({
 
   const handleMessageDelete = (user: User, message: Message) => {
     if (!message) return;
-    console.log("message delete emitted");
     socket.emit("message-delete", user, message);
+    flushSync(() => {
+      handleMessages((prev) => prev.filter((msg) => msg != message));
+    });
   };
 
   const container = groups.map((group) => (
@@ -833,6 +838,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   <MessageContainer
                     typingUsers={typingUsers}
                     messages={messages}
+                    handleMessages={setMessages}
                     user={sessionData.user}
                   />
                 )}

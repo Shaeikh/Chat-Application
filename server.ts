@@ -80,7 +80,6 @@ function setupSockets(httpServer: any) {
     });
 
     socket.on("message-delete", (user, message) => {
-      console.log(user, message);
       if (user.id !== message.user.id || !message || !user) return;
       console.log("deleted message");
       db.run("DELETE FROM messages WHERE id = ?", [message.id]);
