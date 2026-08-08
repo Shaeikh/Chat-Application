@@ -493,6 +493,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const [messageContent, setMessageContent] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentRoom, setCurrentRoom] = useState<string>("");
+  const [typingUsers, setTypingUsers] = useState<User[]>([]);
   const [chatLoading, setChatLoading] = useState<boolean>(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatLoaded, setChatLoaded] = useState<boolean>(false);
@@ -617,6 +618,45 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       socket.off("receive-message", handleReceiveMessage);
     };
   }, [currentRoom]);
+
+  useEffect(() => {
+    const typingData = {
+      roomID: currentRoom,
+      user: sessionData.user,
+      isTyping: true,
+    };
+
+    let typingTimeout;
+    let isCurrentlyTyping = false;
+
+    if (messageContent.trim()) {
+      if (!isCurrentlyTyping) {
+        isCurrentlyTyping = true;
+        socket.emit("typing", typingData);
+      }
+
+      clearTimeout(typingTimeout);
+
+      typingTimeout = setTimeout(() => {
+        isCurrentlyTyping = false;
+        socket.emit("typing", { ...typingData, isTyping: false });
+      }, 3000);
+
+      socket.on("user-typing", (typingData) => {
+        if (typingData.isTyping) {
+          setTypingUsers((prev) => [...prev, typingData.user]);
+        } else {
+          setTypingUsers((prev) =>
+            prev.filter((user) => user != typingData.user),
+          );
+        }
+      });
+    }
+  }, [messageContent]);
+
+  // useEffect(() => {
+
+  // })
 
   return (
     sessionData && (

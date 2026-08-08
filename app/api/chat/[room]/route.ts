@@ -23,7 +23,6 @@ export async function GET(
   try {
     const params = [room];
     if (before) params.push(before);
-    console.log(">>>>PARAMS", ...params);
     const rows = db
       .query(
         `

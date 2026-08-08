@@ -48,6 +48,10 @@ function setupSockets(httpServer: any) {
       socket.join(roomName);
     });
 
+    socket.on("typing", (data) => {
+      socket.to(data.roomID).emit("user-typing", data);
+    });
+
     socket.on("send-message", (message) => {
       try {
         const query = db.prepare(`
