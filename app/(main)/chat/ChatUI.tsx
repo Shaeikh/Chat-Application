@@ -413,7 +413,9 @@ function MessageContainer({
         <Marker role="status">
           <MarkerContent className="shimmer">
             <span className="font-medium">
-              {typingUsers.map((u) => u.name).join(", ")}
+              {typingUsers.length < 4
+                ? typingUsers.map((u) => u.name).join(", ")
+                : "Several people"}
             </span>{" "}
             {typingUsers.length === 1 ? "is" : "are"} typing...
           </MarkerContent>
@@ -491,6 +493,19 @@ function MessageSkeleton() {
         </MessageContent>
       </Message>
       <Message align="end">
+        <MessageAvatar>
+          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
+        </MessageAvatar>
+        <MessageContent>
+          <MessageHeader>
+            <div className="mt-2" />
+          </MessageHeader>
+          <Bubble>
+            <Skeleton className="h-10.75 rounded-3xl w-60" />
+          </Bubble>
+        </MessageContent>
+      </Message>
+      <Message align="start">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
         </MessageAvatar>
