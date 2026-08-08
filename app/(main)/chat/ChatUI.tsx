@@ -96,6 +96,7 @@ interface User {
 interface MessageContainerProps {
   messages: Message[];
   user: User;
+  typingUsers: User[];
 }
 
 interface ChatUIProps {
@@ -154,7 +155,11 @@ function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
   );
 }
 
-function MessageContainer({ messages, user }: MessageContainerProps) {
+function MessageContainer({
+  messages,
+  user,
+  typingUsers,
+}: MessageContainerProps) {
   interface Timestamps {
     messageID: string | undefined;
     time: string;
@@ -401,7 +406,21 @@ function MessageContainer({ messages, user }: MessageContainerProps) {
     </div>
   ));
 
-  return <>{container}</>;
+  return (
+    <>
+      {container}
+      {typingUsers.length > 0 && (
+        <Marker role="status">
+          <MarkerContent className="shimmer">
+            <span className="font-medium">
+              {typingUsers.map((u) => u.name).join(", ")}
+            </span>{" "}
+            {typingUsers.length === 1 ? "is" : "are"} typing...
+          </MarkerContent>
+        </Marker>
+      )}
+    </>
+  );
 }
 
 function MessageSkeleton() {
@@ -511,7 +530,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
         behavior: "smooth",
       });
     }
-  }, [chatLoaded, messages]);
+  }, [chatLoaded, messages, typingUsers]);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // useEffect(() => {
@@ -619,6 +638,9 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     };
   }, [currentRoom]);
 
+  const isCurrentlyTypingRef = useRef(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const typingData = {
       roomID: currentRoom,
@@ -626,37 +648,56 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       isTyping: true,
     };
 
-    let typingTimeout;
-    let isCurrentlyTyping = false;
-
     if (messageContent.trim()) {
-      if (!isCurrentlyTyping) {
-        isCurrentlyTyping = true;
+      if (!isCurrentlyTypingRef.current) {
+        isCurrentlyTypingRef.current = true;
         socket.emit("typing", typingData);
       }
 
-      clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
-      typingTimeout = setTimeout(() => {
-        isCurrentlyTyping = false;
+      typingTimeoutRef.current = setTimeout(() => {
+        isCurrentlyTypingRef.current = false;
         socket.emit("typing", { ...typingData, isTyping: false });
       }, 3000);
-
-      socket.on("user-typing", (typingData) => {
-        if (typingData.isTyping) {
-          setTypingUsers((prev) => [...prev, typingData.user]);
-        } else {
-          setTypingUsers((prev) =>
-            prev.filter((user) => user != typingData.user),
-          );
-        }
-      });
+    } else {
+      // If the user completely deletes their input text, stop typing immediately
+      if (isCurrentlyTypingRef.current) {
+        isCurrentlyTypingRef.current = false;
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        socket.emit("typing", { ...typingData, isTyping: false });
+      }
     }
-  }, [messageContent]);
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [messageContent, currentRoom, sessionData.user]);
 
-  // useEffect(() => {
+  useEffect(() => {
+    const handleUserTyping = (typingData: any) => {
+      if (typingData.user.id === sessionData.user.id) return;
 
-  // })
+      if (typingData.isTyping) {
+        setTypingUsers((prev) => {
+          if (prev.some((u) => u.id === typingData.user.id)) {
+            return prev;
+          }
+
+          return [...prev, typingData.user];
+        });
+      } else {
+        setTypingUsers((prev) =>
+          prev.filter((user) => user.id !== typingData.user.id),
+        );
+      }
+    };
+
+    socket.on("user-typing", handleUserTyping);
+
+    return () => {
+      socket.off("user-typing", handleUserTyping);
+    };
+  }, [sessionData.user.id]);
 
   return (
     sessionData && (
@@ -712,6 +753,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   <div>{chatError}</div>
                 ) : (
                   <MessageContainer
+                    typingUsers={typingUsers}
                     messages={messages}
                     user={sessionData.user}
                   />

@@ -49,6 +49,10 @@ function setupSockets(httpServer: any) {
     });
 
     socket.on("typing", (data) => {
+      console.log("SERVER GOT typing", data);
+      console.log("ROOM:", data.roomID);
+      console.log("ROOM MEMBERS:", io.sockets.adapter.rooms.get(data.roomID));
+
       socket.to(data.roomID).emit("user-typing", data);
     });
 
