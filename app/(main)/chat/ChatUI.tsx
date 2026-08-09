@@ -512,98 +512,94 @@ function MessageContainer({
 
 function MessageSkeleton() {
   return (
-    <>
-      <MessageComponent align="end">
-        <MessageAvatar>
-          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
-        </MessageAvatar>
-        <MessageContent>
-          <MessageHeader>
-            <Skeleton className="ml-2 h-[10.75] w-10" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-10.75 rounded-3xl w-40" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
-      <MessageComponent align="start">
-        <MessageAvatar>
-          <Skeleton className="h-9 w-9 rounded-full" />
-        </MessageAvatar>
-        <MessageContent>
-          <MessageHeader>
-            <Skeleton className="h-[10.75] w-10" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-10.75 rounded-3xl w-30" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
+    <div className="flex flex-col justify-between h-full w-full max-w-lg mx-auto py-2 overflow-hidden pointer-events-none select-none">
+      {/* Date Header Skeleton */}
+      <div className="flex justify-center my-2">
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
 
-      <MessageComponent align="end">
-        <MessageAvatar>
-          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
-        </MessageAvatar>
-        <MessageContent>
-          <MessageHeader>
-            <Skeleton className="ml-2 h-[10.75] w-10" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-10.75 rounded-3xl w-60" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
-      <MessageComponent align="start">
-        <MessageAvatar>
-          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
-        </MessageAvatar>
-        <MessageContent>
-          <MessageHeader>
-            <Skeleton className="h-[10.75] w-10" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-21.5 rounded-3xl w-80" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
-      <MessageComponent align="end">
-        <MessageAvatar />
-        <MessageContent>
-          <MessageHeader>
-            <Skeleton className="ml-2 h-[10.75] w-10" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-10.75 rounded-3xl w-60" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
-      <MessageComponent align="end">
-        <MessageAvatar>
-          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
-        </MessageAvatar>
-        <MessageContent>
-          <MessageHeader>
-            <div className="mt-2" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-10.75 rounded-3xl w-60" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
-      <MessageComponent align="start">
-        <MessageAvatar>
-          <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
-        </MessageAvatar>
-        <MessageContent>
-          <MessageHeader>
-            <div className="mt-2" />
-          </MessageHeader>
-          <Bubble>
-            <Skeleton className="h-10.75 rounded-3xl w-60" />
-          </Bubble>
-        </MessageContent>
-      </MessageComponent>
-    </>
+      <div className="flex flex-col justify-end space-y-4 flex-1">
+        <MessageComponent align="start">
+          <MessageAvatar>
+            <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          </MessageAvatar>
+          <MessageContent>
+            <MessageHeader className="mb-1">
+              <Skeleton className="h-3 w-16" />
+            </MessageHeader>
+            <Bubble>
+              <Skeleton className="h-10 w-44 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+
+        <MessageComponent align="start" className="-mt-2">
+          <MessageAvatar className="w-9">
+            <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          </MessageAvatar>
+          <MessageContent>
+            <Bubble>
+              <Skeleton className="h-14 w-64 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+
+        <MessageComponent align="end">
+          <MessageAvatar className="w-9">
+            <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          </MessageAvatar>
+          <MessageContent className="items-end">
+            <MessageHeader className="mb-1">
+              <Skeleton className="h-3 w-12" />
+            </MessageHeader>
+            <Bubble>
+              <Skeleton className="h-16 w-72 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+
+        <MessageComponent align="start">
+          <MessageAvatar>
+            <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          </MessageAvatar>
+          <MessageContent>
+            <MessageHeader className="mb-1">
+              <Skeleton className="h-3 w-20" />
+            </MessageHeader>
+            <Bubble>
+              <Skeleton className="h-10 w-32 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+
+        <MessageComponent align="end">
+          <MessageAvatar className="w-9" />
+          <MessageContent className="items-end">
+            <Bubble>
+              <Skeleton className="h-10 w-48 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+        <MessageComponent align="end">
+          <MessageAvatar className="w-9" />
+          <MessageContent className="items-end">
+            <Bubble>
+              <Skeleton className="h-10 w-48 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+        <MessageComponent align="end">
+          <MessageAvatar className="w-9">
+            <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          </MessageAvatar>
+          <MessageContent className="items-end">
+            <Bubble>
+              <Skeleton className="h-20 w-48 rounded-3xl" />
+            </Bubble>
+          </MessageContent>
+        </MessageComponent>
+      </div>
+    </div>
   );
 }
 
