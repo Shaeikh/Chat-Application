@@ -6,6 +6,7 @@ export const auth = betterAuth({
     allowedHosts: [
       "*serveo.net",
       "http://localhost:3000",
+      "http://192.168.137.1:3000",
       "*.serveousercontent.com",
     ],
     fallback: process.env.BETTER_AUTH_URL || "http://localhost:3000",

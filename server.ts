@@ -36,7 +36,7 @@ if (!dev) {
 function setupSockets(httpServer: any) {
   const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000", // Allow Next.js HMR client to connect
+      origin: ["http://localhost:3000", "http://192.168.137.1:3000"], // Allow Next.js HMR client to connect
       methods: ["GET", "POST"],
     },
   });

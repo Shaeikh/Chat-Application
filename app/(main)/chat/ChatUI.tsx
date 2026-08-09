@@ -47,6 +47,7 @@ import {
   CopyIcon,
   Edit,
   EditIcon,
+  MoreVertical,
   RefreshCcw,
   RotateCcwIcon,
   ScissorsIcon,
@@ -173,14 +174,21 @@ function MessageContainer({
     messageID: string | undefined;
     time: string;
   }
+  interface ShowMore {
+    messageID: string | undefined;
+    show: boolean;
+  }
   const [timestamps, setTimestamps] = useState<Timestamps>();
   const [focusedMessageId, setFocusedMessageId] = useState<string | undefined>(
     "",
   );
+  const [showMore, setShowMore] = useState<ShowMore>();
+  const [showMoreOpened, setShowMoreOpened] = useState<boolean>();
 
   let hoverTimer: any;
   const handleMouseEnterMessage = (message: Message) => {
     clearTimeout(hoverTimer);
+    setShowMore({ messageID: message.id, show: true });
     hoverTimer = setTimeout(() => {
       setTimestamps({
         messageID: message.id,
@@ -193,7 +201,12 @@ function MessageContainer({
 
   const handleMouseLeaveMessage = () => {
     clearTimeout(hoverTimer);
+    setShowMore(undefined);
     setTimestamps(undefined);
+  };
+
+  const handleOpenShowMore = () => {
+    setShowMoreOpened(!showMoreOpened);
   };
 
   function copyText(text: string) {
@@ -371,7 +384,10 @@ function MessageContainer({
                 <MessageAvatar />
               )}
 
-              <MessageContent>
+              <MessageContent
+                onMouseEnter={() => handleMouseEnterMessage(msg)}
+                onMouseLeave={handleMouseLeaveMessage}
+              >
                 {showUsername ? (
                   <MessageHeader className="mt-2">
                     {msg.user?.name}
@@ -387,22 +403,28 @@ function MessageContainer({
                   )}
                 >
                   {user.id === msg.user.id && (
-                    <span
-                      className={cn(
-                        "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
-                        timestamps?.messageID === msg.id
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    >
-                      {timestamps?.messageID === msg.id ? timestamps?.time : ""}
-                    </span>
+                    <>
+                      <span
+                        className={cn(
+                          "text-[10px] text-muted-foreground whitespace-nowrap duration-400 transition-opacity ease-out",
+                          timestamps?.messageID === msg.id
+                            ? "opacity-100"
+                            : "opacity-0",
+                        )}
+                      >
+                        {timestamps?.messageID === msg.id
+                          ? timestamps?.time
+                          : ""}
+                      </span>
+                      {/* {showMore?.messageID === msg.id && (
+                        <button className="my-auto">
+                          <MoreVertical className="scale-80" />
+                        </button>
+                      )} */}
+                    </>
                   )}
 
-                  <Bubble
-                    onMouseEnter={() => handleMouseEnterMessage(msg)}
-                    onMouseLeave={handleMouseLeaveMessage}
-                  >
+                  <Bubble>
                     <ContextMenu
                       onOpenChange={(open) => {
                         if (open) setFocusedMessageId(msg.id);
@@ -410,16 +432,7 @@ function MessageContainer({
                       }}
                       // onOpenChangeComplete={() => handleContextMenu(msg.id)}
                     >
-                      <BubbleContent
-                        render={
-                          <ContextMenuTrigger
-                          // onContextMenu={(e) => {
-                          //   e.preventDefault();
-                          //   handleContextMenu(msg.id);
-                          // }}
-                          />
-                        }
-                      >
+                      <BubbleContent render={<ContextMenuTrigger />}>
                         {msg.content}
                       </BubbleContent>
                       <ContextMenuContent>
