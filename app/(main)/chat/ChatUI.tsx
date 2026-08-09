@@ -120,7 +120,7 @@ export function MessageInput({
   return (
     <FieldGroup className="max-w-lg">
       <Field>
-        <InputGroup className="">
+        <InputGroup className=" backdrop-blur-xl">
           <Input
             disabled={disabled}
             className="text-lg! px-4 disabled:cursor-not-allowed disabled:pointer-events-auto"
@@ -707,7 +707,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     const previousScrollHeight = container?.scrollHeight || 0;
     try {
       const response = await fetch(
-        `/api/chat/${currentRoom}?before=${messages[90].id}`,
+        `/api/chat/${currentRoom}?before=${messages[0].id}`,
       );
       if (!response.ok) {
         throw new Error("Failed to load messages");
@@ -858,8 +858,8 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                     <div className="p-2 px-6 bg-red-500 rounded-xl flex justify-between items-center">
                       <span className="text-left text-white">{chatError}</span>
 
-                      <button className="hover:">
-                        <div className="flex hover:text-white text-white/70 items-center gap-2 text-sm">
+                      <button onClick={loadRoomData}>
+                        <div className="flex hover:text-white text-white/80 cursor-pointer items-center gap-2 text-sm transition-colors duration-200">
                           <MarkerContent>Try Again</MarkerContent>
                           <MarkerIcon>
                             <RotateCcwIcon />
@@ -877,7 +877,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   />
                 )}
                 <div ref={messagesEndRef} />
-                <div className="shrink-0 sticky bottom-0 border-none p-3 max-w-lg w-full mx-auto">
+                <div className="shrink-0 z-21 sticky bottom-0 border-none p-3 max-w-lg w-full mx-auto">
                   <MessageInput
                     message={messageContent}
                     onMessageChange={setMessageContent}
