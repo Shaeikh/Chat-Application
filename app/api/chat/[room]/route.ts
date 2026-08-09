@@ -34,7 +34,7 @@ export async function GET(
                             m.content,
                             m.created_at AS message_created_at,
                             u.id         AS user_id,
-                            u.NAME,
+                            u.name,
                             u.email,
                             u.image,
                             u.createdat AS user_created_at,

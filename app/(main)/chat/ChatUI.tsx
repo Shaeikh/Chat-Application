@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/bubble";
 import { Marker, MarkerContent, MarkerIcon } from "@/components/ui/marker";
 import {
-  Message,
+  MessageComponent,
   MessageAvatar,
   MessageContent,
   MessageFooter,
@@ -306,30 +306,43 @@ function MessageContainer({
         const sameAsNext = next?.user?.id === msg?.user?.id;
         const isNormalMessage = msg.type === "normal";
 
-        const MAX_GAP = 5 * 60 * 1000; // 5 Minutes
+        const previousUserMessage = [...group.messages]
+          .slice(0, index)
+          .reverse()
+          .find((message) => message.user);
+
+        const nextUserMessage = group.messages
+          .slice(index + 1)
+          .find((message) => message.user);
+
+        const MAX_GAP = 5 * 60 * 1000;
+
+        const previousGrouped =
+          !!msg.user &&
+          !!previousUserMessage &&
+          previousUserMessage.user!.id === msg.user.id &&
+          new Date(msg.createdAt).getTime() -
+            new Date(previousUserMessage.createdAt).getTime() <
+            MAX_GAP;
+
         const nextGrouped =
-          next &&
-          next.user?.id === msg.user?.id &&
-          new Date(next.createdAt).getTime() -
+          !!msg.user &&
+          !!nextUserMessage &&
+          nextUserMessage.user!.id === msg.user.id &&
+          new Date(nextUserMessage.createdAt).getTime() -
             new Date(msg.createdAt).getTime() <
             MAX_GAP;
-        const previousGrouped =
-          previous &&
-          previous.user?.id === msg.user?.id &&
-          Math.abs(
-            new Date(msg.createdAt).getTime() -
-              new Date(previous.createdAt).getTime(),
-          ) < MAX_GAP;
+
+        const showAvatar = !nextGrouped;
 
         const showUsername = !previousGrouped;
-        const showAvatar = !previousGrouped;
 
         const isCurrentFocused = focusedMessageId === msg.id;
         const isAnyMessageFocused = focusedMessageId;
 
         const messageBody =
           isNormalMessage && msg ? (
-            <Message
+            <MessageComponent
               className={cn(
                 "transition-all",
                 sameAsPrevious ? "mt-1" : "mt-6",
@@ -357,7 +370,9 @@ function MessageContainer({
 
               <MessageContent>
                 {showUsername ? (
-                  <MessageHeader>{msg.user?.name}</MessageHeader>
+                  <MessageHeader className="mt-2">
+                    {msg.user?.name}
+                  </MessageHeader>
                 ) : (
                   <div className="w-10 shrink-0" />
                 )}
@@ -454,7 +469,7 @@ function MessageContainer({
                   )}
                 </div>
               </MessageContent>
-            </Message>
+            </MessageComponent>
           ) : (
             <div className="text-center">{msg.content}</div>
           );
@@ -498,7 +513,7 @@ function MessageContainer({
 function MessageSkeleton() {
   return (
     <>
-      <Message align="end">
+      <MessageComponent align="end">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
         </MessageAvatar>
@@ -510,8 +525,8 @@ function MessageSkeleton() {
             <Skeleton className="h-10.75 rounded-3xl w-40" />
           </Bubble>
         </MessageContent>
-      </Message>
-      <Message align="start">
+      </MessageComponent>
+      <MessageComponent align="start">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 rounded-full" />
         </MessageAvatar>
@@ -523,9 +538,9 @@ function MessageSkeleton() {
             <Skeleton className="h-10.75 rounded-3xl w-30" />
           </Bubble>
         </MessageContent>
-      </Message>
+      </MessageComponent>
 
-      <Message align="end">
+      <MessageComponent align="end">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
         </MessageAvatar>
@@ -537,8 +552,8 @@ function MessageSkeleton() {
             <Skeleton className="h-10.75 rounded-3xl w-60" />
           </Bubble>
         </MessageContent>
-      </Message>
-      <Message align="start">
+      </MessageComponent>
+      <MessageComponent align="start">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
         </MessageAvatar>
@@ -550,8 +565,8 @@ function MessageSkeleton() {
             <Skeleton className="h-21.5 rounded-3xl w-80" />
           </Bubble>
         </MessageContent>
-      </Message>
-      <Message align="end">
+      </MessageComponent>
+      <MessageComponent align="end">
         <MessageAvatar />
         <MessageContent>
           <MessageHeader>
@@ -561,8 +576,8 @@ function MessageSkeleton() {
             <Skeleton className="h-10.75 rounded-3xl w-60" />
           </Bubble>
         </MessageContent>
-      </Message>
-      <Message align="end">
+      </MessageComponent>
+      <MessageComponent align="end">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
         </MessageAvatar>
@@ -574,8 +589,8 @@ function MessageSkeleton() {
             <Skeleton className="h-10.75 rounded-3xl w-60" />
           </Bubble>
         </MessageContent>
-      </Message>
-      <Message align="start">
+      </MessageComponent>
+      <MessageComponent align="start">
         <MessageAvatar>
           <Skeleton className="h-9 w-9 shrink-0 rounded-full self-end group-has-data-[slot=message-footer]/message:-translate-y-8" />
         </MessageAvatar>
@@ -587,7 +602,7 @@ function MessageSkeleton() {
             <Skeleton className="h-10.75 rounded-3xl w-60" />
           </Bubble>
         </MessageContent>
-      </Message>
+      </MessageComponent>
     </>
   );
 }
