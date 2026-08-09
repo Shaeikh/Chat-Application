@@ -47,6 +47,8 @@ import {
   CopyIcon,
   Edit,
   EditIcon,
+  RefreshCcw,
+  RotateCcwIcon,
   ScissorsIcon,
   TrashIcon,
 } from "lucide-react";
@@ -64,6 +66,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { MorphingRing } from "@/components/ui/morphing-ring";
 import { TripleDotSpinner } from "@/components/ui/triple-dot-spinner";
 import { PreviewCard } from "@base-ui/react";
+import { toast } from "sonner";
 
 interface MessageInputProps {
   message: string | "";
@@ -702,23 +705,28 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const loadPreviousMessages = async () => {
     const container = messagesContainerRef.current;
     const previousScrollHeight = container?.scrollHeight || 0;
-    const response = await fetch(
-      `/api/chat/${currentRoom}?before=${messages[0].id}`,
-    );
-    if (!response.ok) {
-      throw new Error("Failed to load messages");
-    }
-    const data = (await response.json()) as Message[];
+    try {
+      const response = await fetch(
+        `/api/chat/${currentRoom}?before=${messages[90].id}`,
+      );
+      if (!response.ok) {
+        throw new Error("Failed to load messages");
+      }
+      const data = (await response.json()) as Message[];
 
-    if (data.length === 0) {
-      setAllChatMessagesLoaded(true);
+      if (data.length === 0) {
+        setAllChatMessagesLoaded(true);
+      }
+      flushSync(() => {
+        setMessages((prev) => [...data, ...prev]);
+      });
+      setLoadingPrevMessages(false);
+      const newScrollHeight = container?.scrollHeight || 0;
+      container!.scrollTop += newScrollHeight - previousScrollHeight;
+    } catch (e) {
+      setLoadingPrevMessages(false);
+      setChatError("Failed to load previous chats");
     }
-    flushSync(() => {
-      setMessages((prev) => [...data, ...prev]);
-    });
-    setLoadingPrevMessages(false);
-    const newScrollHeight = container?.scrollHeight || 0;
-    container!.scrollTop += newScrollHeight - previousScrollHeight;
   };
 
   useEffect(() => {
@@ -846,7 +854,20 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 {chatLoading ? (
                   <MessageSkeleton />
                 ) : chatError ? (
-                  <div>{chatError}</div>
+                  <div className="mx-auto max-w-md w-full">
+                    <div className="p-2 px-6 bg-red-500 rounded-xl flex justify-between items-center">
+                      <span className="text-left text-white">{chatError}</span>
+
+                      <button className="hover:">
+                        <div className="flex hover:text-white text-white/70 items-center gap-2 text-sm">
+                          <MarkerContent>Try Again</MarkerContent>
+                          <MarkerIcon>
+                            <RotateCcwIcon />
+                          </MarkerIcon>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
                 ) : (
                   <MessageContainer
                     typingUsers={typingUsers}
@@ -856,16 +877,15 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   />
                 )}
                 <div ref={messagesEndRef} />
+                <div className="shrink-0 sticky bottom-0 border-none p-3 max-w-lg w-full mx-auto">
+                  <MessageInput
+                    message={messageContent}
+                    onMessageChange={setMessageContent}
+                    onMessageSend={handleSendMessage}
+                    disabled={Boolean(chatLoading || chatError)}
+                  />
+                </div>
               </div>
-            </div>
-
-            <div className="shrink-0 sticky bottom-0 border-none p-3 max-w-lg w-full mx-auto">
-              <MessageInput
-                message={messageContent}
-                onMessageChange={setMessageContent}
-                onMessageSend={handleSendMessage}
-                disabled={chatLoading}
-              />
             </div>
           </>
         )}
