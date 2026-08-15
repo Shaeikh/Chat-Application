@@ -1,15 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "./lib/auth";
 
 export async function proxy(request: NextRequest) {
-  const sessionCookie = request.cookies.get("better-auth.session_token");
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/chat") && !sessionCookie) {
+  const session = await auth.api.getSession({
+    headers: request.headers,
+  });
+
+  const isAuthenticated = !!session?.user;
+
+  if (pathname.startsWith("/chat") && !isAuthenticated) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+
   if (
     (pathname.startsWith("/login") || pathname.startsWith("/signup")) &&
-    sessionCookie
+    isAuthenticated
   ) {
     return NextResponse.redirect(new URL("/chat", request.url));
   }

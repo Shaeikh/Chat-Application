@@ -4,49 +4,53 @@ import { Server } from "socket.io";
 import db from "./lib/db";
 import { auth } from "./lib/auth";
 
-const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
-
 const PORT = 4000;
-
 const onlineUsers = new Map();
 
-if (!dev) {
-  // Production Monolith Setup
-  const app = next({ dev, hostname, port: PORT });
-  const handler = app.getRequestHandler();
-
-  app.prepare().then(() => {
-    const httpServer = createServer(handler);
-    setupSockets(httpServer);
-    httpServer.listen(PORT, () =>
-      console.log(`> Monolith active on port ${PORT}`),
-    );
-  });
-} else {
-  // Fast Dev Mode Setup (Isolate Sockets from NextJS .next/ directory)
-  const httpServer = createServer((req, res) => {
-    res.writeHead(404);
-    res.end();
-  });
-  setupSockets(httpServer);
-  httpServer.listen(PORT, () =>
-    console.log(`> Socket.IO backend active on port ${PORT}`),
-  );
-}
+const httpServer = createServer((req, res) => {
+  res.writeHead(404);
+  res.end();
+});
+setupSockets(httpServer);
+httpServer.listen(PORT, hostname, () =>
+  console.log(`> Socket.IO backend active on port ${PORT}`),
+);
 
 function setupSockets(httpServer: any) {
+  const allowedOrigins = [
+    "http://localhost:3000",
+    "http://192.168.137.1:3000",
+    process.env.NEXT_PUBLIC_APP_URL,
+  ].filter(Boolean);
+
   const io = new Server(httpServer, {
     cors: {
-      origin: ["http://localhost:3000", "http://192.168.137.1:3000"],
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps/curl) or matched origins
+        if (
+          !origin ||
+          allowedOrigins.includes(origin) ||
+          origin.endsWith(".serveo.net")
+        ) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       methods: ["GET", "POST"],
       credentials: true,
     },
   });
+  io.engine.on("connection_error", (err) => {
+    console.error("ENGINE CONNECTION ERROR");
+    console.error("code:", err.code);
+    console.error("message:", err.message);
+    console.error("context:", err.context);
+  });
 
   io.use(async (socket, next) => {
     try {
-      // 1. Extract token or cookie from the handshake
       const token = socket.handshake.auth.token;
       const cookieHeader = socket.handshake.headers.cookie;
 
@@ -54,21 +58,17 @@ function setupSockets(httpServer: any) {
         return next(new Error("Authentication failed: No token provided"));
       }
 
-      // 2. Leverage Better Auth API to verify the session
-      // We construct a mock request object that Better Auth's session validator expects
-      const session = await auth.api.getSession({
-        headers: new Headers({
-          ...(cookieHeader && { cookie: cookieHeader }),
-          ...(token && { authorization: `Bearer ${token}` }),
-        }),
-      });
+      // Construct headers for Better Auth session validation
+      const headers = new Headers();
+      if (cookieHeader) headers.append("cookie", cookieHeader);
+      if (token) headers.append("authorization", `Bearer ${token}`);
+
+      const session = await auth.api.getSession({ headers });
 
       if (!session || !session.user) {
         return next(new Error("Authentication failed: Invalid session"));
       }
 
-      // 3. Attach the verified Better Auth user to the socket instance
-      // attach verified user to the socket (cast to any to satisfy TS)
       (socket as any).user = session.user;
       next();
     } catch (error) {
