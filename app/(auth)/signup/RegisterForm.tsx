@@ -22,6 +22,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signUpSchema } from "@/lib/validations/auth";
 import { Link } from "next-view-transitions";
+import { Eye, EyeOff, Loader2, LockKeyhole, Mail, User } from "lucide-react";
 
 const RegisterForm = () => {
   const router = useRouter();
@@ -30,12 +31,17 @@ const RegisterForm = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+
   const image =
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2NLEHl5XGc3uuRqpAwuNjYljXHejw64ayZeG5CgnSbxsNVPBfRbpv-zk&s=10";
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [formErrors, setFormErrors] = useState<Record<string, string[]>>({});
   const [serverError, setServerError] = useState<string>("");
+
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [showConfirmPassword, setShowConfirmPassword] =
+    useState<boolean>(false);
 
   const handleSubmitForm = async (e: React.SubmitEvent) => {
     e.preventDefault();
@@ -51,7 +57,6 @@ const RegisterForm = () => {
     if (!validation.success) {
       const errors = validation?.error?.flatten()?.fieldErrors;
       setFormErrors(errors as Record<string, string[]>);
-      console.log(formErrors);
       return;
     }
 
@@ -80,222 +85,319 @@ const RegisterForm = () => {
   };
 
   return (
-    <section className="bg-foreground dark:bg-background min-h-screen relative flex items-center justify-center">
-      {/* <div className="pointer-events-none absolute inset-0 right-0 overflow-hidden md:block hidden"> */}
-      {/* <div className="absolute left-1/1 top-0 h-650 w-650 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10" />
-        <div className="absolute left-1/1 top-0 h-175 w-175 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground dark:bg-background" /> */}
-
-      {/* </div> */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
+    <section className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-foreground px-4 py-8 dark:bg-background sm:px-6 lg:px-8">
+      {/* Background image */}
+      <div className="pointer-events-none absolute inset-0">
         <Image
           src="/bg.png"
-          alt="Background"
+          alt=""
           fill
           priority
           sizes="100vw"
-          className="object-fill object-center opacity-40"
+          className="object-cover object-center opacity-25"
         />
+
+        {/* Background overlays */}
+        <div className="absolute inset-0 bg-linear-to-br from-background/90 via-background/60 to-primary/10" />
+
+        <div className="absolute -left-32 -top-32 h-80 w-80 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
       </div>
-      <div className="py-10 md:py-20 max-w-7xl max-[1400px]:max-w-xl px-4 sm:px-0 m-auto w-full z-10">
-        <div className="w-full max-w-xl">
-          <Card className="mr-10 p-6 sm:p-10 relative">
-            <CardHeader className="text-center gap-6 p-0">
-              {/* <div className="mx-auto">
-                <a href="">
-                  <img
-                    src="https://images.shadcnspace.com/assets/logo/logo-icon-white.svg"
-                    alt="shadcnspace"
-                    className="hidden dark:block h-10 w-10"
-                  />
-                </a>
-              </div> */}
-              <div className="flex flex-col gap-1">
-                <CardTitle className="text-2xl font-medium text-card-foreground">
-                  Signup to Konvo
-                </CardTitle>
-                <CardDescription className="text-sm text-muted-foreground font-normal">
-                  Signup to your account now
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="flex items-center">
-              <form className="flex-1" onSubmit={handleSubmitForm}>
-                <FieldGroup className="gap-6">
-                  <Field className="grid md:grid-cols-2 md:gap-6 gap-3">
-                    <Button
-                      disabled
-                      variant="outline"
-                      type="button"
-                      className="!disabled:cursor-not-allowed text-sm text-medium text-card-foreground gap-2 dark:bg-background rounded-lg h-9 shadow-xs"
-                    >
-                      <img
-                        src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
-                        alt="google icon"
-                        className="h-4 w-4"
-                      />
-                      Sign up with Google
-                    </Button>
-                    <Button
-                      disabled
-                      variant="outline"
-                      type="button"
-                      className="disabled:cursor-not-allowed text-sm text-medium text-card-foreground gap-2 cursor-pointer dark:bg-background rounded-lg h-9 shadow-xs"
-                    >
-                      <img
-                        src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
-                        alt="github icon"
-                        className="dark:hidden  h-4 w-4"
-                      />
-                      <img
-                        src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
-                        alt="github icon"
-                        className="hidden dark:block  h-4 w-4"
-                      />
-                      Sign up with Github
-                    </Button>
-                  </Field>
-                  <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card text-sm text-muted-foreground bg-transparent">
-                    <span className="px-4">or continue with</span>
-                  </FieldSeparator>
 
-                  <div className="flex flex-col gap-4">
-                    <Field className="gap-1.5">
-                      <FieldLabel
-                        htmlFor="name"
-                        className="text-sm text-muted-foreground font-normal"
-                      >
-                        Name*
-                      </FieldLabel>
-                      <Input
-                        disabled={isLoading}
-                        id="text"
-                        type="text"
-                        placeholder="Enter your name"
-                        required
-                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
-                        value={name}
-                        onChange={(e) => setUsername(e.target.value)}
-                      />
-                      {formErrors.name && (
-                        <FieldDescription className="text-red-400">
-                          {formErrors.name[0]}
-                        </FieldDescription>
-                      )}
-                    </Field>
-                    <Field className="gap-1.5">
-                      <FieldLabel
-                        htmlFor="email"
-                        className="text-sm text-muted-foreground font-normal"
-                      >
-                        Email*
-                      </FieldLabel>
-                      <Input
-                        disabled={isLoading}
-                        id="email"
-                        type="email"
-                        placeholder="example@company.com"
-                        required
-                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                      />
-                      {formErrors.email && (
-                        <FieldDescription className="text-red-400">
-                          {formErrors.email[0]}
-                        </FieldDescription>
-                      )}
-                    </Field>
-                    <Field className="gap-1.5">
-                      <FieldLabel
-                        htmlFor="password"
-                        className="text-sm text-muted-foreground font-normal"
-                      >
-                        Password*
-                      </FieldLabel>
+      {/* Main content */}
+      <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
+        {/* Logo / brand */}
+        <div className="mb-6 flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <span className="text-lg font-bold">[K]</span>
+          </div>
 
-                      <Input
-                        disabled={isLoading}
-                        id="password"
-                        type="password"
-                        placeholder="Enter your password"
-                        required
-                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                      />
-                      {formErrors.password && (
-                        <FieldDescription className="text-red-400">
-                          {formErrors.password[0]}
-                        </FieldDescription>
-                      )}
-                    </Field>
-                    <Field className="gap-1.5">
-                      <FieldLabel
-                        htmlFor="confirmPassword"
-                        className="text-sm text-muted-foreground font-normal"
-                      >
-                        Confirm Password*
-                      </FieldLabel>
+          <span className="text-lg font-semibold tracking-tight text-background dark:text-foreground">
+            Konvo
+          </span>
+        </div>
 
-                      <Input
-                        disabled={isLoading}
-                        id="confirm-password"
-                        type="password"
-                        placeholder="Enter your password again"
-                        required
-                        className="dark:bg-background shadow-xs text-md! px-4! h-10 rounded-lg"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                      />
-                      {formErrors.confirmPassword && (
-                        <FieldDescription className="text-red-400">
-                          {formErrors.confirmPassword[0]}
-                        </FieldDescription>
-                      )}
-                    </Field>
+        <Card className="w-full overflow-hidden rounded-2xl border-border/60 bg-card/95 shadow-2xl shadow-black/10 backdrop-blur-xl">
+          <CardHeader className="space-y-2 px-6 pt-7 text-center sm:px-8 sm:pt-8">
+            <CardTitle className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Create your account
+            </CardTitle>
+
+            <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+              Join Konvo and start connecting with your team
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="px-6 pb-7 sm:px-8 sm:pb-8">
+            <form className="w-full" onSubmit={handleSubmitForm}>
+              <FieldGroup className="gap-5">
+                {/* Social signup */}
+                <Field className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="h-11 rounded-xl border-border/70 text-sm font-medium shadow-sm transition-colors text-medium text-card-foreground gap-2 hover:cursor-not-allowed"
+                  >
+                    <img
+                      src="https://images.shadcnspace.com/assets/svgs/icon-google.svg"
+                      alt="Google"
+                      className="h-4 w-4"
+                    />
+                    Google
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    type="button"
+                    className="h-11 rounded-xl border-border/70 text-sm font-medium shadow-sm transition-colors text-medium text-card-foreground gap-2 hover:cursor-not-allowed"
+                  >
+                    <img
+                      src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
+                      alt="GitHub"
+                      className="h-4 w-4 dark:hidden"
+                    />
+                    <img
+                      src="https://images.shadcnspace.com/assets/svgs/icon-github-white.svg"
+                      alt="GitHub"
+                      className="hidden h-4 w-4 dark:block"
+                    />
+                    GitHub
+                  </Button>
+                </Field>
+
+                <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card text-sm text-muted-foreground bg-transparent">
+                  {" "}
+                  <span className="px-1">or continue with</span>{" "}
+                </FieldSeparator>
+
+                {/* Name */}
+                <Field className="gap-2">
+                  <FieldLabel
+                    htmlFor="name"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Name
+                  </FieldLabel>
+
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
+                      disabled={isLoading}
+                      id="name"
+                      type="text"
+                      placeholder="Enter your name"
+                      required
+                      autoComplete="name"
+                      className="h-11 rounded-xl border-border/70 bg-background pl-10 pr-4 shadow-sm transition-all placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                      value={name}
+                      onChange={(e) => setUsername(e.target.value)}
+                    />
                   </div>
 
-                  <Field className="gap-4">
-                    <Button
+                  {formErrors.name && (
+                    <FieldDescription className="text-xs font-medium text-destructive">
+                      {formErrors.name[0]}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Email */}
+                <Field className="gap-2">
+                  <FieldLabel
+                    htmlFor="email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email address
+                  </FieldLabel>
+
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
                       disabled={isLoading}
-                      type="submit"
-                      size={"lg"}
-                      className="bg-primary/80 rounded-lg cursor-pointer h-12 text-md! hover:bg-primary/60"
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                      className="h-11 rounded-xl border-border/70 bg-background pl-10 pr-4 shadow-sm transition-all placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+
+                  {formErrors.email && (
+                    <FieldDescription className="text-xs font-medium text-destructive">
+                      {formErrors.email[0]}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Password */}
+                <Field className="gap-2">
+                  <FieldLabel
+                    htmlFor="password"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Password
+                  </FieldLabel>
+
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
+                      disabled={isLoading}
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a password"
+                      required
+                      autoComplete="new-password"
+                      className="h-11 rounded-xl border-border/70 bg-background pl-10 pr-11 shadow-sm transition-all placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none"
                     >
-                      Sign up
-                    </Button>
-                    <FieldDescription>
-                      By signing up, you acknowledge that you understand and
-                      agree to the <a>Terms & Conditions</a> and{" "}
-                      <a>Privacy Policy</a>
-                    </FieldDescription>{" "}
-                    {serverError && (
-                      <FieldDescription className="text-red-400">
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+
+                  {formErrors.password && (
+                    <FieldDescription className="text-xs font-medium text-destructive">
+                      {formErrors.password[0]}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Confirm password */}
+                <Field className="gap-2">
+                  <FieldLabel
+                    htmlFor="confirmPassword"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Confirm password
+                  </FieldLabel>
+
+                  <div className="relative">
+                    <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+
+                    <Input
+                      disabled={isLoading}
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Enter your password again"
+                      required
+                      autoComplete="new-password"
+                      className="h-11 rounded-xl border-border/70 bg-background pl-10 pr-11 shadow-sm transition-all placeholder:text-muted-foreground/60 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      aria-label={
+                        showConfirmPassword
+                          ? "Hide confirm password"
+                          : "Show confirm password"
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+
+                  {formErrors.confirmPassword && (
+                    <FieldDescription className="text-xs font-medium text-destructive">
+                      {formErrors.confirmPassword[0]}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Submit */}
+                <Field className="gap-4">
+                  <Button
+                    disabled={isLoading}
+                    type="submit"
+                    size="lg"
+                    className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/20 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create account"
+                    )}
+                  </Button>
+
+                  {/* Terms */}
+                  <FieldDescription className="text-xs leading-relaxed text-muted-foreground">
+                    By creating an account, you acknowledge that you understand
+                    and agree to the{" "}
+                    <a
+                      href="#"
+                      className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      Terms & Conditions
+                    </a>{" "}
+                    and{" "}
+                    <a
+                      href="#"
+                      className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+                    >
+                      Privacy Policy
+                    </a>
+                    .
+                  </FieldDescription>
+
+                  {/* Server error */}
+                  {serverError && (
+                    <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2.5 text-center">
+                      <FieldDescription className="text-xs font-medium text-destructive">
                         {serverError}
                       </FieldDescription>
-                    )}
-                    <FieldDescription className="text-center text-sm font-normal text-muted-foreground">
-                      Already have an account?{" "}
-                      <Link
-                        href="login"
-                        className="font-medium text-card-foreground no-underline!"
-                      >
-                        Log in
-                      </Link>
-                    </FieldDescription>
-                  </Field>
-                </FieldGroup>
-              </form>
-              {/* <div className="">
-              <img
-                src="https://images.shadcnspace.com/assets/svgs/icon-github.svg"
-                alt="Illustration"
-                className="w-80 h-auto"
-              />
-            </div> */}
-            </CardContent>
-          </Card>
-        </div>
+                    </div>
+                  )}
+
+                  {/* Login */}
+                  <FieldDescription className="text-center text-sm text-muted-foreground">
+                    Already have an account?{" "}
+                    <Link
+                      href="/login"
+                      className="font-semibold text-foreground underline-offset-4 transition-colors hover:text-primary hover:underline"
+                    >
+                      Log in
+                    </Link>
+                  </FieldDescription>
+                </Field>
+              </FieldGroup>
+            </form>
+          </CardContent>
+        </Card>
+
+        <p className="mt-6 px-4 text-center text-xs text-background/50 dark:text-foreground/40">
+          Create your account and start connecting with your team.
+        </p>
       </div>
     </section>
   );
