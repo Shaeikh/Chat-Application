@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 
-import { useEffect, useRef, useState, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { socket } from "@/lib/socket";
@@ -235,25 +235,58 @@ function MessageContainer({
       year: date.getFullYear() === today.getFullYear() ? undefined : "numeric",
     });
   }
-  const groups: {
-    date: string;
-    messages: Message[];
-  }[] = [];
+  const groups = useMemo(() => {
+    const sortedMessages = [...messages].sort(
+      (a, b) => a.createdAt - b.createdAt,
+    );
 
-  for (const message of messages) {
-    const date = formatChatDate(new Date(message.createdAt));
+    const result: {
+      date: string;
+      dateKey: string;
+      messages: Message[];
+    }[] = [];
 
-    const lastGroup = groups[groups.length - 1];
+    for (const message of sortedMessages) {
+      const date = new Date(message.createdAt);
 
-    if (!lastGroup || lastGroup.date !== date) {
-      groups.push({
-        date,
-        messages: [message],
-      });
-    } else {
-      lastGroup.messages.push(message);
+      const dateKey = [
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+      ].join("-");
+
+      const dateLabel = formatChatDate(date);
+      const lastGroup = result[result.length - 1];
+
+      if (!lastGroup || lastGroup.dateKey !== dateKey) {
+        result.push({
+          date: dateLabel,
+          dateKey,
+          messages: [message],
+        });
+      } else {
+        lastGroup.messages.push(message);
+      }
     }
-  }
+
+    return result;
+  }, [messages]);
+
+  // for (const message of messages) {
+  //   const date = formatChatDate(new Date(message.createdAt));
+
+  //   const lastGroup = groups[groups.length - 1];
+
+  //   if (!lastGroup || lastGroup.date !== date) {
+  //     groups.push({
+  //       date,
+  //       messages: [message],
+  //       dateKey: date,
+  //     });
+  //   } else {
+  //     lastGroup.messages.push(message);
+  //   }
+  // }
 
   useEffect(() => {
     let scrollTimeout: NodeJS.Timeout;
@@ -309,7 +342,7 @@ function MessageContainer({
   };
 
   const container = groups.map((group) => (
-    <div key={group.date}>
+    <div key={group.dateKey}>
       <div
         id={group.date}
         className="sticky-badge sticky top-0 z-20 text-center transform translate-y-0 transition-all duration-500 ease-in-out"
@@ -755,7 +788,15 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
         setAllChatMessagesLoaded(true);
       }
       flushSync(() => {
-        setMessages((prev) => [...data, ...prev]);
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((message) => message.id));
+
+          const newMessages = data.filter(
+            (message) => !existingIds.has(message.id),
+          );
+
+          return [...newMessages, ...prev];
+        });
       });
       setLoadingPrevMessages(false);
       const newScrollHeight = container?.scrollHeight || 0;
@@ -910,7 +951,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                     "All users offline"
                   )}{" "}
                   {onlineUsers.map((u) => (
-                    <Badge key={u + uuidv4()} className="mr-2">
+                    <Badge key={u} className="mr-2">
                       @{u}
                     </Badge>
                   ))}
