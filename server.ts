@@ -100,9 +100,14 @@ function setupSockets(httpServer: any) {
           onlineUsers.delete(userId);
           console.log(`User ${userId} went offline.`);
 
-          // Broadcast the update because someone left
           broadcastOnlineUsers();
         }
+      }
+    });
+
+    socket.on("room-joined", (recievedUser) => {
+      if (userId === recievedUser.id) {
+        broadcastOnlineUsers();
       }
     });
     function broadcastOnlineUsers() {
@@ -111,20 +116,6 @@ function setupSockets(httpServer: any) {
       );
       io.emit("online-users-list", onlineUsersList);
     }
-
-    socket.on("room-joined", (recievedUser) => {
-      if (userId === recievedUser.id) {
-        // Broadcast to everyone because a new user joined and stabilized
-        broadcastOnlineUsers();
-      }
-    });
-    // const users: string[] = [];
-
-    // socket.on("online-users-list", (room, user) => {
-    //   users.push(user.name);
-    //   console.log("room joined:", user);
-    //   socket.to(room).emit("user-online", new Set(users));
-    // });
 
     socket.on("typing", (data) => {
       // console.log("SERVER GOT typing", data);

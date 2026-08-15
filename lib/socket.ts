@@ -8,7 +8,4 @@ const SOCKET_URL =
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
   withCredentials: true,
-  // auth: {
-  //   token: localStorage.getItem("better-auth.session_token")
-  // }
 });

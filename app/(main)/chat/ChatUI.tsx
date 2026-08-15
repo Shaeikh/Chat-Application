@@ -864,9 +864,14 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
         {currentRoom && sessionData.user && (
           <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-            <div className="shrink-0 max-w-lg mx-auto w-full bg-accent p-4">
-              <div>{currentRoom}</div>
-              <div>{onlineUsers.join(", ")}</div>
+            <div className="shrink-0 max-w-lg rounded-2xl mt-2 mx-auto w-full bg-accent-foreground/10 p-4">
+              <div className="font-bold mb-1 text-xl">{currentRoom}</div>
+              <div>
+                {onlineUsers.length > 0 ? "" : "All users offline"}{" "}
+                {onlineUsers.map((u) => (
+                  <Badge className="rounded-2xl mr-2 p-1 text-sm">@{u}</Badge>
+                ))}
+              </div>
             </div>
 
             <div
