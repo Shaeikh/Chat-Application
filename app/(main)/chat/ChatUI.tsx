@@ -123,6 +123,7 @@ export function MessageInput({
       <Field>
         <InputGroup className=" backdrop-blur-xl">
           <Input
+            autoComplete="off"
             disabled={disabled}
             className="text-lg! px-4 disabled:cursor-not-allowed disabled:pointer-events-auto"
             placeholder="Write a message"
