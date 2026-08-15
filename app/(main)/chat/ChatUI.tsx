@@ -35,6 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 import { useEffect, useRef, useState, type UIEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { socket } from "@/lib/socket";
 import { authClient } from "@/lib/auth-client";
@@ -121,7 +122,7 @@ export function MessageInput({
   return (
     <FieldGroup className="max-w-lg">
       <Field>
-        <InputGroup className=" backdrop-blur-xl">
+        <InputGroup className="bg-input!">
           <Input
             autoComplete="off"
             disabled={disabled}
@@ -838,7 +839,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       socket.off("user-typing", handleUserTyping);
     };
   }, [sessionData.user.id]);
-
   return (
     sessionData && (
       <div className="h-screen flex min-h-0 overflow-hidden">
@@ -864,13 +864,25 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
         )}
 
         {currentRoom && sessionData.user && (
-          <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-            <div className="shrink-0 max-w-lg rounded-2xl mt-2 mx-auto w-full bg-accent-foreground/10 p-4">
+          <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
+            <Image
+              src="/chat-bg.jpg"
+              alt="Background graphic"
+              fill
+              priority
+              className="max-w-136 opacity-60 not-dark:opacity-90 flex flex-col w-full mx-auto -z-10"
+            />
+            <div className="shrink-0 max-w-lg rounded-2xl mt-2 mx-auto w-full bg-white/25 p-4">
               <div className="font-bold mb-1 text-xl">{currentRoom}</div>
               <div>
                 {onlineUsers.length > 0 ? "" : "All users offline"}{" "}
                 {onlineUsers.map((u) => (
-                  <Badge className="rounded-2xl mr-2 p-1 text-sm">@{u}</Badge>
+                  <Badge
+                    key={u + uuidv4()}
+                    className="rounded-2xl mr-2 p-1 text-sm"
+                  >
+                    @{u}
+                  </Badge>
                 ))}
               </div>
             </div>
