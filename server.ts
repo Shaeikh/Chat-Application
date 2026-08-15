@@ -7,8 +7,7 @@ import { auth } from "./lib/auth";
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 
-// Frontend runs on 3000, Socket server runs on 4000 during dev
-const PORT = dev ? 4000 : 3000;
+const PORT = 4000;
 
 const onlineUsers = new Map();
 
@@ -105,7 +104,8 @@ function setupSockets(httpServer: any) {
       }
     });
 
-    socket.on("room-joined", (recievedUser) => {
+    socket.on("room-joined", (room, recievedUser) => {
+      socket.join(room);
       if (userId === recievedUser.id) {
         broadcastOnlineUsers();
       }

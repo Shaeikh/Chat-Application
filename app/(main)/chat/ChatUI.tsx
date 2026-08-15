@@ -687,7 +687,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       content: `${sessionData?.user.name} has Joined the room`,
       createdAt: Date.now(),
     };
-    socket.emit("room-joined", sessionData.user);
+    socket.emit("room-joined", name, sessionData.user);
     socket.emit("send-message", joinedRoomAlert);
 
     // socket.on("user-online", (users) => {
@@ -699,9 +699,6 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     const handleOnlineUsers = (
       onlineUsers: Array<{ id: string; name: string }>,
     ) => {
-      // console.log("ONLINE USERS EVENT:", roomName, users);
-      console.log("Online users: ", onlineUsers);
-
       setOnlineUsers(onlineUsers.map((u) => u.name));
     };
 
