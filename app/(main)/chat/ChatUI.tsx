@@ -122,7 +122,7 @@ export function MessageInput({
   return (
     <FieldGroup className="max-w-lg">
       <Field>
-        <InputGroup className="bg-input!">
+        <InputGroup className="backdrop-blur-2xl">
           <Input
             autoComplete="off"
             disabled={disabled}
@@ -449,10 +449,12 @@ function MessageContainer({
                         </ContextMenuGroup>
                         <ContextMenuSeparator />
                         <ContextMenuGroup>
-                          <ContextMenuItem>
-                            <EditIcon />
-                            Edit
-                          </ContextMenuItem>
+                          {user.id === msg.user.id && (
+                            <ContextMenuItem>
+                              <EditIcon />
+                              Edit
+                            </ContextMenuItem>
+                          )}
                           <ContextMenuItem
                             onClick={() => copyText(msg.content)}
                           >
@@ -865,22 +867,19 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
         {currentRoom && sessionData.user && (
           <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
-            <Image
+            {/* <Image
               src="/chat-bg.jpg"
               alt="Background graphic"
               fill
               priority
               className="max-w-136 opacity-60 not-dark:opacity-90 flex flex-col w-full mx-auto -z-10"
-            />
-            <div className="shrink-0 max-w-lg rounded-2xl mt-2 mx-auto w-full bg-white/25 p-4">
+            /> */}
+            <div className="shrink-0 max-w-lg rounded-2xl mt-2 mx-auto w-full bg-input/50 p-4">
               <div className="font-bold mb-1 text-xl">{currentRoom}</div>
               <div>
                 {onlineUsers.length > 0 ? "" : "All users offline"}{" "}
                 {onlineUsers.map((u) => (
-                  <Badge
-                    key={u + uuidv4()}
-                    className="rounded-2xl mr-2 p-1 text-sm"
-                  >
+                  <Badge key={u + uuidv4()} className="mr-2">
                     @{u}
                   </Badge>
                 ))}
