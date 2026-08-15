@@ -120,9 +120,9 @@ export function MessageInput({
   disabled = true,
 }: MessageInputProps) {
   return (
-    <FieldGroup className="max-w-lg">
+    <FieldGroup className="w-full">
       <Field>
-        <InputGroup className="backdrop-blur-2xl">
+        <InputGroup className="backdrop-blur-3xl">
           <Input
             autoComplete="off"
             disabled={disabled}
@@ -625,6 +625,7 @@ function MessageSkeleton() {
 
 export default function ChatUI({ serverSession }: ChatUIProps) {
   const [user, setUser] = useState<User>();
+  const [mobileRoomsOpen, setMobileRoomsOpen] = useState(false);
   const [messageContent, setMessageContent] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentRoom, setCurrentRoom] = useState<string>("");
@@ -845,7 +846,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     sessionData && (
       <div className="h-screen flex min-h-0 overflow-hidden">
         {sessionData.user && (
-          <div className="shrink-0 flex flex-col gap-2 p-2">
+          <div className="shrink-0 hidden md:flex flex-col gap-2 p-2">
             <ModeToggle />
             <Room
               name="Room 1"
@@ -867,6 +868,32 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
         {currentRoom && sessionData.user && (
           <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
+            {/* Mobile header */}
+            <div className="md:hidden flex items-center justify-between px-4 py-2">
+              <button
+                onClick={() => setMobileRoomsOpen(!mobileRoomsOpen)}
+                className="px-3 py-1 rounded-md border"
+              >
+                Rooms
+              </button>
+              <div className="font-bold text-lg truncate">{currentRoom}</div>
+              <ModeToggle />
+            </div>
+
+            {mobileRoomsOpen && (
+              <div className="md:hidden px-4 pb-2 space-y-2">
+                <Room
+                  name="Room 1"
+                  onRoomChange={setCurrentRoom}
+                  onRoomJoin={handleRoomJoin}
+                />
+                <Room
+                  name="Room 2"
+                  onRoomChange={setCurrentRoom}
+                  onRoomJoin={handleRoomJoin}
+                />
+              </div>
+            )}
             {/* <Image
               src="/chat-bg.jpg"
               alt="Background graphic"
@@ -874,22 +901,30 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               priority
               className="max-w-136 opacity-60 not-dark:opacity-90 flex flex-col w-full mx-auto -z-10"
             /> */}
-            <div className="shrink-0 max-w-lg rounded-2xl mt-2 mx-auto w-full bg-input/50 p-4">
-              <div className="font-bold mb-1 text-xl">{currentRoom}</div>
-              <div>
-                {onlineUsers.length > 0 ? "" : "All users offline"}{" "}
-                {onlineUsers.map((u) => (
-                  <Badge key={u + uuidv4()} className="mr-2">
-                    @{u}
-                  </Badge>
-                ))}
+            <div className="mx-4">
+              <div className="shrink-0 w-0 max-w-lg md:max-w-3xl rounded-2xl mt-2 md:mx-auto bg-input/50  md:p-4 md:w-full">
+                <div className="font-bold mb-1 text-xl hidden md:block">
+                  {currentRoom}
+                </div>
+                <div className="flex gap-2">
+                  {onlineUsers.length > 0 ? (
+                    <span className="inline md:hidden">Online: </span>
+                  ) : (
+                    "All users offline"
+                  )}{" "}
+                  {onlineUsers.map((u) => (
+                    <Badge key={u + uuidv4()} className="mr-2">
+                      @{u}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
 
             <div
               key={currentRoom}
               ref={messagesContainerRef}
-              className="flex-1 min-h-0 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
+              className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
               onScroll={(e) => {
                 if (
                   e.currentTarget.scrollTop <= 100 &&
@@ -901,7 +936,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 }
               }}
             >
-              <div className="max-w-lg mx-auto w-full min-h-full flex flex-col justify-end">
+              <div className="w-full max-w-lg md:max-w-3xl mx-auto min-h-full flex flex-col justify-end">
                 {loadingPrevMessages && (
                   <div className="mt-3 mb-5 mx-auto">
                     <TripleDotSpinner />
@@ -936,7 +971,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
                 <div ref={messagesEndRef} />
 
-                <div className="shrink-0 sticky bottom-0 z-21 border-none p-3 max-w-lg w-full mx-auto">
+                <div className="shrink-0 sticky bottom-0 z-21 border-none p-3 w-full max-w-lg md:max-w-3xl mx-auto">
                   <MessageInput
                     message={messageContent}
                     onMessageChange={setMessageContent}
