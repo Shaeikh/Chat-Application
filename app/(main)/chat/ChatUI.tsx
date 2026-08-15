@@ -630,6 +630,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const [chatLoaded, setChatLoaded] = useState<boolean>(false);
   const [loadingPrevMessages, setLoadingPrevMessages] = useState(false);
   const [allChatMessagesLoaded, setAllChatMessagesLoaded] = useState(false);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -671,7 +672,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   };
 
   const handleRoomJoin = (name: string) => {
-    if (!name.trim()) return;
+    if (!name.trim() || currentRoom === name) return;
 
     const joinedRoomAlert = {
       user: "System",
@@ -681,9 +682,30 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
       content: `${sessionData?.user.name} has Joined the room`,
       createdAt: Date.now(),
     };
-    socket.emit("room-joined", name);
+    socket.emit("room-joined", sessionData.user);
     socket.emit("send-message", joinedRoomAlert);
+
+    // socket.on("user-online", (users) => {
+    //   setOnlineUsers([users]);
+    // });
   };
+
+  useEffect(() => {
+    const handleOnlineUsers = (
+      onlineUsers: Array<{ id: string; name: string }>,
+    ) => {
+      // console.log("ONLINE USERS EVENT:", roomName, users);
+      console.log("Online users: ", onlineUsers);
+
+      setOnlineUsers(onlineUsers.map((u) => u.name));
+    };
+
+    socket.on("online-users-list", handleOnlineUsers);
+
+    return () => {
+      socket.off("online-users-list", handleOnlineUsers);
+    };
+  }, [currentRoom]);
 
   useEffect(() => {
     loadRoomData();
@@ -818,34 +840,39 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
   return (
     sessionData && (
-      <div className="h-screen flex flex-col">
-        <div className="absolute">
-          <ModeToggle />
+      <div className="h-screen flex min-h-0 overflow-hidden">
+        {sessionData.user && (
+          <div className="shrink-0 flex flex-col gap-2 p-2">
+            <ModeToggle />
+            <Room
+              name="Room 1"
+              onRoomChange={setCurrentRoom}
+              onRoomJoin={handleRoomJoin}
+            />
 
-          {sessionData.user && (
-            <>
-              <Room
-                name="Room 1"
-                onRoomChange={setCurrentRoom}
-                onRoomJoin={handleRoomJoin}
-              />
-              <Room
-                name="Room 2"
-                onRoomChange={setCurrentRoom}
-                onRoomJoin={handleRoomJoin}
-              />
-              <p className="top-20 left-2 z-50 bg-black text-white">
-                {currentRoom}
-              </p>
-            </>
-          )}
-        </div>
+            <Room
+              name="Room 2"
+              onRoomChange={setCurrentRoom}
+              onRoomJoin={handleRoomJoin}
+            />
+
+            <p className="top-20 left-2 z-50 bg-black text-white p-2">
+              {currentRoom}
+            </p>
+          </div>
+        )}
+
         {currentRoom && sessionData.user && (
-          <>
+          <div className="flex-1 min-w-0 min-h-0 flex flex-col">
+            <div className="shrink-0 max-w-lg mx-auto w-full bg-accent p-4">
+              <div>{currentRoom}</div>
+              <div>{onlineUsers.join(", ")}</div>
+            </div>
+
             <div
-              key={currentRoom} // so the states go back to default the second the room is changed
+              key={currentRoom}
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
+              className="flex-1 min-h-0 overflow-y-auto px-4 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
               onScroll={(e) => {
                 if (
                   e.currentTarget.scrollTop <= 100 &&
@@ -854,16 +881,16 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 ) {
                   setLoadingPrevMessages(true);
                   loadPreviousMessages();
-                  setTimeout(() => {}, 5000);
                 }
               }}
             >
-              <div className="max-w-lg mx-auto w-full justify-end flex flex-col min-h-full">
+              <div className="max-w-lg mx-auto w-full min-h-full flex flex-col justify-end">
                 {loadingPrevMessages && (
                   <div className="mt-3 mb-5 mx-auto">
                     <TripleDotSpinner />
                   </div>
                 )}
+
                 {chatLoading ? (
                   <MessageSkeleton />
                 ) : chatError ? (
@@ -889,8 +916,10 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                     user={sessionData.user}
                   />
                 )}
+
                 <div ref={messagesEndRef} />
-                <div className="shrink-0 z-21 sticky bottom-0 border-none p-3 max-w-lg w-full mx-auto">
+
+                <div className="shrink-0 sticky bottom-0 z-21 border-none p-3 max-w-lg w-full mx-auto">
                   <MessageInput
                     message={messageContent}
                     onMessageChange={setMessageContent}
@@ -900,7 +929,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 </div>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     )

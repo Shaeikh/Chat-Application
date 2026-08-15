@@ -2,12 +2,15 @@ import { createServer } from "http";
 import next from "next";
 import { Server } from "socket.io";
 import db from "./lib/db";
+import { auth } from "./lib/auth";
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "localhost";
 
 // Frontend runs on 3000, Socket server runs on 4000 during dev
 const PORT = dev ? 4000 : 3000;
+
+const onlineUsers = new Map();
 
 if (!dev) {
   // Production Monolith Setup
@@ -36,17 +39,92 @@ if (!dev) {
 function setupSockets(httpServer: any) {
   const io = new Server(httpServer, {
     cors: {
-      origin: ["http://localhost:3000", "http://192.168.137.1:3000"], // Allow Next.js HMR client to connect
+      origin: ["http://localhost:3000", "http://192.168.137.1:3000"],
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
-  io.on("connection", (socket) => {
-    console.log("User Connected:", socket.id);
+  io.use(async (socket, next) => {
+    try {
+      // 1. Extract token or cookie from the handshake
+      const token = socket.handshake.auth.token;
+      const cookieHeader = socket.handshake.headers.cookie;
 
-    socket.on("room-joined", (roomName) => {
-      socket.join(roomName);
+      if (!token && !cookieHeader) {
+        return next(new Error("Authentication failed: No token provided"));
+      }
+
+      // 2. Leverage Better Auth API to verify the session
+      // We construct a mock request object that Better Auth's session validator expects
+      const session = await auth.api.getSession({
+        headers: new Headers({
+          ...(cookieHeader && { cookie: cookieHeader }),
+          ...(token && { authorization: `Bearer ${token}` }),
+        }),
+      });
+
+      if (!session || !session.user) {
+        return next(new Error("Authentication failed: Invalid session"));
+      }
+
+      // 3. Attach the verified Better Auth user to the socket instance
+      // attach verified user to the socket (cast to any to satisfy TS)
+      (socket as any).user = session.user;
+      next();
+    } catch (error) {
+      return next(new Error("Internal authentication error"));
+    }
+  });
+
+  io.on("connection", (socket) => {
+    const user = (socket as any).user;
+    const userId = user.id; // Better Auth string ID
+
+    if (!onlineUsers.has(userId)) {
+      onlineUsers.set(userId, {
+        profile: { id: userId, name: user.name || user.email },
+        sockets: new Set(),
+      });
+    }
+    onlineUsers.get(userId).sockets.add(socket.id);
+
+    console.log(`User ${user.email} connected.`);
+
+    socket.on("disconnect", () => {
+      const userData = onlineUsers.get(userId);
+      if (userData) {
+        userData.sockets.delete(socket.id);
+
+        if (userData.sockets.size === 0) {
+          onlineUsers.delete(userId);
+          console.log(`User ${userId} went offline.`);
+
+          // Broadcast the update because someone left
+          broadcastOnlineUsers();
+        }
+      }
     });
+    function broadcastOnlineUsers() {
+      const onlineUsersList = Array.from(onlineUsers.values()).map(
+        (userGroup) => userGroup.profile,
+      );
+      io.emit("online-users-list", onlineUsersList);
+    }
+
+    socket.on("room-joined", (recievedUser) => {
+      if (userId === recievedUser.id) {
+        // Broadcast to everyone because a new user joined and stabilized
+        broadcastOnlineUsers();
+      }
+    });
+    // const users: string[] = [];
+
+    // socket.on("online-users-list", (room, user) => {
+    //   users.push(user.name);
+    //   console.log("room joined:", user);
+    //   socket.to(room).emit("user-online", new Set(users));
+    // });
 
     socket.on("typing", (data) => {
       // console.log("SERVER GOT typing", data);
