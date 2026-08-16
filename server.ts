@@ -1,5 +1,4 @@
 import { createServer } from "http";
-import next from "next";
 import { Server } from "socket.io";
 import db from "./lib/db";
 import { auth } from "./lib/auth";

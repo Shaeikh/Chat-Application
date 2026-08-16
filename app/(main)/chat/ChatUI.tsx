@@ -44,6 +44,8 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   CalendarIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   ClipboardPasteIcon,
   CopyIcon,
   Edit,
@@ -81,6 +83,7 @@ interface RoomProps {
   name: string;
   onRoomChange: (name: string) => void;
   onRoomJoin: (name: string) => void;
+  collapsed?: boolean;
 }
 
 type Message = {
@@ -154,15 +157,29 @@ export function MessageInput({
   );
 }
 
-function Room({ name, onRoomChange, onRoomJoin }: RoomProps) {
-  function onClick() {
-    onRoomChange(name);
-    onRoomJoin(name);
-  }
+function Room({
+  name,
+  onRoomChange,
+  onRoomJoin,
+  collapsed = false,
+}: RoomProps) {
   return (
-    <div>
-      <Button onClick={onClick}>{name}</Button>
-    </div>
+    <button
+      onClick={() => {
+        onRoomChange(name);
+        onRoomJoin(name);
+      }}
+      title={collapsed ? name : undefined}
+      className={cn(
+        "flex w-full items-center rounded-lg text-sm transition-colors",
+        "hover:bg-muted hover:text-foreground",
+        collapsed ? "justify-center px-2 py-3" : "px-3 py-2.5",
+      )}
+    >
+      <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40" />
+
+      {!collapsed && <span className="ml-3 truncate">{name}</span>}
+    </button>
   );
 }
 
@@ -271,22 +288,6 @@ function MessageContainer({
 
     return result;
   }, [messages]);
-
-  // for (const message of messages) {
-  //   const date = formatChatDate(new Date(message.createdAt));
-
-  //   const lastGroup = groups[groups.length - 1];
-
-  //   if (!lastGroup || lastGroup.date !== date) {
-  //     groups.push({
-  //       date,
-  //       messages: [message],
-  //       dateKey: date,
-  //     });
-  //   } else {
-  //     lastGroup.messages.push(message);
-  //   }
-  // }
 
   useEffect(() => {
     let scrollTimeout: NodeJS.Timeout;
@@ -657,8 +658,8 @@ function MessageSkeleton() {
 }
 
 export default function ChatUI({ serverSession }: ChatUIProps) {
-  const [user, setUser] = useState<User>();
   const [mobileRoomsOpen, setMobileRoomsOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [messageContent, setMessageContent] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentRoom, setCurrentRoom] = useState<string>("");
@@ -670,19 +671,24 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
   const [allChatMessagesLoaded, setAllChatMessagesLoaded] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
+  const isLoadingPreviousRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    if (isLoadingPreviousRef.current) {
+      return;
+    }
+
     if (chatLoaded) {
       messagesEndRef.current?.scrollIntoView({
         behavior: "instant",
       });
     } else {
-      messagesEndRef?.current?.scrollIntoView({
+      messagesEndRef.current?.scrollIntoView({
         behavior: "smooth",
       });
     }
   }, [chatLoaded, messages, typingUsers]);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // useEffect(() => {
   //   const container = messagesContainerRef.current;
@@ -774,19 +780,33 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
   const loadPreviousMessages = async () => {
     const container = messagesContainerRef.current;
-    const previousScrollHeight = container?.scrollHeight || 0;
+
+    if (!container || !messages.length) {
+      setLoadingPrevMessages(false);
+      return;
+    }
+
+    isLoadingPreviousRef.current = true;
+
+    const previousScrollHeight = container.scrollHeight;
+    const previousScrollTop = container.scrollTop;
+
     try {
       const response = await fetch(
         `/api/chat/${currentRoom}?before=${messages[0].id}`,
       );
+
       if (!response.ok) {
         throw new Error("Failed to load messages");
       }
+
       const data = (await response.json()) as Message[];
 
       if (data.length === 0) {
         setAllChatMessagesLoaded(true);
+        return;
       }
+
       flushSync(() => {
         setMessages((prev) => {
           const existingIds = new Set(prev.map((message) => message.id));
@@ -798,12 +818,17 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
           return [...newMessages, ...prev];
         });
       });
-      setLoadingPrevMessages(false);
-      const newScrollHeight = container?.scrollHeight || 0;
-      container!.scrollTop += newScrollHeight - previousScrollHeight;
+
+      // Keep the user at the same message after prepending.
+      const newScrollHeight = container.scrollHeight;
+
+      container.scrollTop =
+        previousScrollTop + (newScrollHeight - previousScrollHeight);
     } catch (e) {
-      setLoadingPrevMessages(false);
       setChatError("Failed to load previous chats");
+    } finally {
+      setLoadingPrevMessages(false);
+      isLoadingPreviousRef.current = false;
     }
   };
 
@@ -884,23 +909,94 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     sessionData && (
       <div className="h-screen flex min-h-0 overflow-hidden">
         {sessionData.user && (
-          <div className="shrink-0 hidden md:flex flex-col gap-2 p-2">
-            <ModeToggle />
-            <Room
-              name="Room 1"
-              onRoomChange={setCurrentRoom}
-              onRoomJoin={handleRoomJoin}
-            />
+          <div
+            className={cn(
+              "hidden shrink-0 border-r bg-muted/30 transition-[width] duration-200 md:flex md:flex-col",
+              sidebarCollapsed ? "w-16" : "w-60",
+            )}
+          >
+            {/* Header */}
+            <div
+              className={cn(
+                "flex h-16 items-center border-b",
+                sidebarCollapsed
+                  ? "justify-center px-2"
+                  : "justify-between px-4",
+              )}
+            >
+              {!sidebarCollapsed && (
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Chat
+                  </p>
+                  <h1 className="text-lg font-semibold">Rooms</h1>
+                </div>
+              )}
 
-            <Room
-              name="Room 2"
-              onRoomChange={setCurrentRoom}
-              onRoomJoin={handleRoomJoin}
-            />
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed((prev) => !prev)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label={
+                  sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+                }
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRightIcon className="h-4 w-4" />
+                ) : (
+                  <ChevronLeftIcon className="h-4 w-4" />
+                )}
+              </button>
+            </div>
 
-            <p className="top-20 left-2 z-50 bg-black text-white p-2">
-              {currentRoom}
-            </p>
+            {/* Rooms */}
+            <div className="flex-1 overflow-y-auto p-3">
+              {!sidebarCollapsed && (
+                <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Available rooms
+                </p>
+              )}
+
+              <div className="space-y-1">
+                <Room
+                  name="Room 1"
+                  onRoomChange={setCurrentRoom}
+                  onRoomJoin={handleRoomJoin}
+                  collapsed={sidebarCollapsed}
+                />
+
+                <Room
+                  name="Room 2"
+                  onRoomChange={setCurrentRoom}
+                  onRoomJoin={handleRoomJoin}
+                  collapsed={sidebarCollapsed}
+                />
+              </div>
+            </div>
+
+            <div className="border-t p-3">
+              <div
+                className={
+                  sidebarCollapsed
+                    ? "bg-input/50 flex justify-center p-0 rounded-full"
+                    : "bg-input/50 flex items-center justify-between px-3 py-2 rounded-lg"
+                }
+              >
+                {!sidebarCollapsed && (
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-muted-foreground">
+                      Current room
+                    </p>
+
+                    <p className="truncate text-sm font-medium">
+                      {currentRoom || "No room selected"}
+                    </p>
+                  </div>
+                )}
+
+                <ModeToggle />
+              </div>
+            </div>
           </div>
         )}
 
@@ -940,27 +1036,50 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
               className="max-w-136 opacity-60 not-dark:opacity-90 flex flex-col w-full mx-auto -z-10"
             /> */}
             <div className="mx-4">
-              <div className="shrink-0 w-0 max-w-lg md:max-w-3xl rounded-2xl mt-2 md:mx-auto bg-input/50  md:p-4 md:w-full">
-                <div className="font-bold mb-1 text-xl hidden md:block">
-                  {currentRoom}
+              <div className="mx-auto mt-2 w-full max-w-lg rounded-2xl border bg-input/50 p-3 shadow-sm md:max-w-3xl md:p-4">
+                <div className="mb-3 hidden items-center md:flex">
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Room
+                    </p>
+                    <h2 className="truncate text-xl font-bold">
+                      {currentRoom}
+                    </h2>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex min-h-8 items-center gap-2">
                   {onlineUsers.length > 0 ? (
-                    <span className="inline md:hidden">Online: </span>
+                    <>
+                      <div className="flex shrink-0 items-center gap-1.5 text-sm font-medium">
+                        <span className="h-2 w-2 rounded-full bg-green-500" />
+                        <span className="md:hidden">Online</span>
+                        <span className="hidden md:inline">Online users</span>
+                      </div>
+                      <div className="flex min-w-0 flex-wrap gap-1.5">
+                        {onlineUsers.map((u) => (
+                          <Badge
+                            key={u}
+                            variant="secondary"
+                            className="rounded-full px-2.5 py-1 text-xs font-medium"
+                          >
+                            @{u}
+                          </Badge>
+                        ))}
+                      </div>
+                    </>
                   ) : (
-                    "All users offline"
-                  )}{" "}
-                  {onlineUsers.map((u) => (
-                    <Badge key={u} className="mr-2">
-                      @{u}
-                    </Badge>
-                  ))}
+                    <div className="flex shrink-0 items-center gap-1.5 text-sm font-medium">
+                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                      <span className="md:hidden">Offline</span>
+                      <span className="hidden md:inline">No users online</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
             <div
-              key={currentRoom}
               ref={messagesContainerRef}
               className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
               onScroll={(e) => {
