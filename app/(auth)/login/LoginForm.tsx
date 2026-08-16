@@ -98,7 +98,7 @@ const LoginForm = () => {
       <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
         {/* Logo / brand */}
         <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-9 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+          <div className="flex h-8 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <span className="text-lg font-bold">[K]</span>
           </div>
 
