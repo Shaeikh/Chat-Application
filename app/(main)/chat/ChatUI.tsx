@@ -959,14 +959,14 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
 
               <div className="space-y-1">
                 <Room
-                  name="Room 1"
+                  name="General"
                   onRoomChange={setCurrentRoom}
                   onRoomJoin={handleRoomJoin}
                   collapsed={sidebarCollapsed}
                 />
 
                 <Room
-                  name="Room 2"
+                  name="Lobby"
                   onRoomChange={setCurrentRoom}
                   onRoomJoin={handleRoomJoin}
                   collapsed={sidebarCollapsed}
