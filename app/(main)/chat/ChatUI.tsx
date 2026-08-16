@@ -84,6 +84,7 @@ interface RoomProps {
   onRoomChange: (name: string) => void;
   onRoomJoin: (name: string) => void;
   collapsed?: boolean;
+  active?: boolean;
 }
 
 type Message = {
@@ -162,6 +163,7 @@ function Room({
   onRoomChange,
   onRoomJoin,
   collapsed = false,
+  active = false,
 }: RoomProps) {
   return (
     <button
@@ -176,7 +178,12 @@ function Room({
         collapsed ? "justify-center px-2 py-3" : "px-3 py-2.5",
       )}
     >
-      <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground/40" />
+      <span
+        className={cn(
+          "h-2 w-2 shrink-0 rounded-full",
+          active ? "bg-blue-400" : "bg-input",
+        )}
+      />
 
       {!collapsed && <span className="ml-3 truncate">{name}</span>}
     </button>
@@ -963,6 +970,7 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   onRoomChange={setCurrentRoom}
                   onRoomJoin={handleRoomJoin}
                   collapsed={sidebarCollapsed}
+                  active={currentRoom === "General"}
                 />
 
                 <Room
@@ -970,20 +978,22 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   onRoomChange={setCurrentRoom}
                   onRoomJoin={handleRoomJoin}
                   collapsed={sidebarCollapsed}
+                  active={currentRoom === "Lobby"}
                 />
               </div>
             </div>
 
-            <div className="border-t p-3">
+            <div className="shrink-0 overflow-hidden border-t p-3">
               <div
-                className={
+                className={cn(
+                  "bg-input/50 flex min-w-0 items-center rounded-lg",
                   sidebarCollapsed
-                    ? "bg-input/50 flex justify-center p-0 rounded-full"
-                    : "bg-input/50 flex items-center justify-between px-3 py-2 rounded-lg"
-                }
+                    ? "justify-center p-0"
+                    : "justify-between px-3 py-2",
+                )}
               >
                 {!sidebarCollapsed && (
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1 overflow-hidden">
                     <p className="text-[11px] text-muted-foreground">
                       Current room
                     </p>
@@ -994,7 +1004,9 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                   </div>
                 )}
 
-                <ModeToggle />
+                <div className="shrink-0">
+                  <ModeToggle />
+                </div>
               </div>
             </div>
           </div>
@@ -1003,10 +1015,10 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
         {currentRoom && sessionData.user && (
           <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
             {/* Mobile header */}
-            <div className="md:hidden flex items-center justify-between px-4 py-2">
+            <div className="md:hidden flex items-center justify-between px-4 mt-2">
               <button
                 onClick={() => setMobileRoomsOpen(!mobileRoomsOpen)}
-                className="px-3 py-1 rounded-md border"
+                className="px-2 py-1 rounded-md text-sm border"
               >
                 Rooms
               </button>
@@ -1017,12 +1029,12 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
             {mobileRoomsOpen && (
               <div className="md:hidden px-4 pb-2 space-y-2">
                 <Room
-                  name="Room 1"
+                  name="General"
                   onRoomChange={setCurrentRoom}
                   onRoomJoin={handleRoomJoin}
                 />
                 <Room
-                  name="Room 2"
+                  name="Lobby"
                   onRoomChange={setCurrentRoom}
                   onRoomJoin={handleRoomJoin}
                 />
