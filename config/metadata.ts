@@ -5,10 +5,10 @@ export const pageMetadata = {
   },
   signup: {
     title: "Sign Up",
-    description: "Create an account on our platform.",
+    description: "Create an account on Konvo.",
   },
   chat: {
     title: "Chat Workspace",
-    description: "Connect with your team.",
+    description: "Connect with other people.",
   },
 };
