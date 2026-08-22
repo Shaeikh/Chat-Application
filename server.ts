@@ -1,39 +1,44 @@
 import { createServer } from "http";
+import next from "next";
 import { Server } from "socket.io";
-import db from "./lib/db";
-import { auth } from "./lib/auth";
+import db from "./lib/db.js";
+import { auth } from "./lib/auth.js";
 
-const hostname = "localhost";
-const PORT = 4000;
+const hostname = process.env.HOSTNAME || "localhost";
+const PORT = Number(process.env.PORT || 3000);
+const dev = process.env.NODE_ENV !== "production";
 const onlineUsers = new Map();
 
-const httpServer = createServer((req, res) => {
-  res.writeHead(404);
-  res.end();
+const app = next({ dev, hostname, port: PORT, webpack: dev });
+const handle = app.getRequestHandler();
+
+app.prepare().then(() => {
+  const httpServer = createServer((req, res) => handle(req, res));
+  setupSockets(httpServer);
+  httpServer.listen(PORT, hostname, () =>
+    console.log(`> Next.js and Socket.IO active at http://${hostname}:${PORT}`),
+  );
 });
-setupSockets(httpServer);
-httpServer.listen(PORT, hostname, () =>
-  console.log(`> Socket.IO backend active on port ${PORT}`),
-);
 
 function setupSockets(httpServer: any) {
   const allowedOrigins = [
     "http://localhost:3000",
     "http://192.168.137.1:3000",
+    "https://crinkle-shaping-creatable.ngrok-free.dev",
     process.env.NEXT_PUBLIC_APP_URL,
   ].filter(Boolean);
 
   const io = new Server(httpServer, {
     cors: {
       origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps/curl) or matched origins
         if (
           !origin ||
           allowedOrigins.includes(origin) ||
-          origin.endsWith(".serveo.net")
+          origin.endsWith(".serveousercontent.com")
         ) {
           callback(null, true);
         } else {
+          console.log("Blocked CORS origin:", origin);
           callback(new Error("Not allowed by CORS"));
         }
       },
@@ -139,8 +144,6 @@ function setupSockets(httpServer: any) {
           message.content,
           message.createdAt,
         );
-        query.finalize();
-
         io.to(message.room).emit("receive-message", message);
       } catch (err) {
         console.error("MESSAGE ERROR:", err);
@@ -150,7 +153,7 @@ function setupSockets(httpServer: any) {
     socket.on("message-delete", (user, message) => {
       if (user.id !== message.user.id || !message || !user) return;
       console.log("deleted message");
-      db.run("DELETE FROM messages WHERE id = ?", [message.id]);
+      db.prepare("DELETE FROM messages WHERE id = ?").run(message.id);
     });
   });
 }
