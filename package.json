@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev --turbo\" \"bun --watch server.ts\"",
+    "dev": "bun server.ts",
     "build": "next build",
-    "start": "bun server.ts",
+    "start": "NODE_ENV=production tsx server.ts",
     "lint": "eslint"
   },
+  "type": "module",
   "dependencies": {
     "@base-ui/react": "^1.6.0",
     "@shadcn/react": "^0.2.1",
