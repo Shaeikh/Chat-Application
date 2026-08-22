@@ -736,6 +736,10 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
     socket.emit("room-joined", name, sessionData.user);
     socket.emit("send-message", joinedRoomAlert);
 
+    if (mobileRoomsOpen) {
+      setMobileRoomsOpen(false);
+    }
+
     // socket.on("user-online", (users) => {
     //   setOnlineUsers([users]);
     // });
@@ -1012,22 +1016,26 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
           </div>
         )}
 
-        {currentRoom && sessionData.user && (
-          <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
-            {/* Mobile header */}
-            <div className="md:hidden flex items-center justify-between px-4 mt-2">
+        <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
+          {/* Mobile header */}
+          <div className="md:hidden shrink-0">
+            <div className="flex items-center justify-between px-4 mt-2">
               <button
-                onClick={() => setMobileRoomsOpen(!mobileRoomsOpen)}
+                onClick={() => setMobileRoomsOpen((prev) => !prev)}
                 className="px-2 py-1 rounded-md text-sm border"
               >
                 Rooms
               </button>
-              <div className="font-bold text-lg truncate">{currentRoom}</div>
+
+              <div className="font-bold text-lg truncate">
+                {currentRoom || "Select a room"}
+              </div>
+
               <ModeToggle />
             </div>
 
             {mobileRoomsOpen && (
-              <div className="md:hidden px-4 pb-2 space-y-2">
+              <div className="px-4 pb-2 space-y-2">
                 <Room
                   name="General"
                   onRoomChange={setCurrentRoom}
@@ -1040,118 +1048,126 @@ export default function ChatUI({ serverSession }: ChatUIProps) {
                 />
               </div>
             )}
-            {/* <Image
+          </div>
+          {currentRoom && sessionData.user && (
+            <div className="relative flex-1 min-w-0 min-h-0 flex flex-col">
+              {/* <Image
               src="/chat-bg.jpg"
               alt="Background graphic"
               fill
               priority
               className="max-w-136 opacity-60 not-dark:opacity-90 flex flex-col w-full mx-auto -z-10"
             /> */}
-            <div className="mx-4">
-              <div className="mx-auto mt-2 w-full max-w-lg rounded-2xl border bg-input/50 p-3 shadow-sm md:max-w-3xl md:p-4">
-                <div className="mb-3 hidden items-center md:flex">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Room
-                    </p>
-                    <h2 className="truncate text-xl font-bold">
-                      {currentRoom}
-                    </h2>
+              <div className="mx-4">
+                <div className="mx-auto mt-2 w-full max-w-lg rounded-2xl border bg-input/50 p-3 shadow-sm md:max-w-3xl md:p-4">
+                  <div className="mb-3 hidden items-center md:flex">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Room
+                      </p>
+                      <h2 className="truncate text-xl font-bold">
+                        {currentRoom}
+                      </h2>
+                    </div>
+                  </div>
+
+                  <div className="flex min-h-8 items-center gap-2">
+                    {onlineUsers.length > 0 ? (
+                      <>
+                        <div className="flex shrink-0 items-center gap-1.5 text-sm font-medium">
+                          <span className="h-2 w-2 rounded-full bg-green-500" />
+                          <span className="md:hidden">Online</span>
+                          <span className="hidden md:inline">Online users</span>
+                        </div>
+                        <div className="flex min-w-0 flex-wrap gap-1.5">
+                          {onlineUsers.map((u) => (
+                            <Badge
+                              key={u}
+                              variant="secondary"
+                              className="rounded-full px-2.5 py-1 text-xs font-medium"
+                            >
+                              @{u}
+                            </Badge>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex shrink-0 items-center gap-1.5 text-sm font-medium">
+                        <span className="h-2 w-2 rounded-full bg-red-500" />
+                        <span className="md:hidden">Offline</span>
+                        <span className="hidden md:inline">
+                          No users online
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                <div className="flex min-h-8 items-center gap-2">
-                  {onlineUsers.length > 0 ? (
-                    <>
-                      <div className="flex shrink-0 items-center gap-1.5 text-sm font-medium">
-                        <span className="h-2 w-2 rounded-full bg-green-500" />
-                        <span className="md:hidden">Online</span>
-                        <span className="hidden md:inline">Online users</span>
-                      </div>
-                      <div className="flex min-w-0 flex-wrap gap-1.5">
-                        {onlineUsers.map((u) => (
-                          <Badge
-                            key={u}
-                            variant="secondary"
-                            className="rounded-full px-2.5 py-1 text-xs font-medium"
-                          >
-                            @{u}
-                          </Badge>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex shrink-0 items-center gap-1.5 text-sm font-medium">
-                      <span className="h-2 w-2 rounded-full bg-red-500" />
-                      <span className="md:hidden">Offline</span>
-                      <span className="hidden md:inline">No users online</span>
+              <div
+                ref={messagesContainerRef}
+                className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
+                onScroll={(e) => {
+                  if (
+                    e.currentTarget.scrollTop <= 100 &&
+                    !loadingPrevMessages &&
+                    !allChatMessagesLoaded
+                  ) {
+                    setLoadingPrevMessages(true);
+                    loadPreviousMessages();
+                  }
+                }}
+              >
+                <div className="w-full max-w-lg md:max-w-3xl mx-auto min-h-full flex flex-col justify-end">
+                  {loadingPrevMessages && (
+                    <div className="mt-3 mb-5 mx-auto">
+                      <TripleDotSpinner />
                     </div>
                   )}
-                </div>
-              </div>
-            </div>
 
-            <div
-              ref={messagesContainerRef}
-              className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 scrollbar-thin scrollbar-thumb-zinc-600 scrollbar-track-transparent mt-3"
-              onScroll={(e) => {
-                if (
-                  e.currentTarget.scrollTop <= 100 &&
-                  !loadingPrevMessages &&
-                  !allChatMessagesLoaded
-                ) {
-                  setLoadingPrevMessages(true);
-                  loadPreviousMessages();
-                }
-              }}
-            >
-              <div className="w-full max-w-lg md:max-w-3xl mx-auto min-h-full flex flex-col justify-end">
-                {loadingPrevMessages && (
-                  <div className="mt-3 mb-5 mx-auto">
-                    <TripleDotSpinner />
-                  </div>
-                )}
+                  {chatLoading ? (
+                    <MessageSkeleton />
+                  ) : chatError ? (
+                    <div className="mx-auto max-w-md w-full">
+                      <div className="p-2 px-6 bg-red-500 rounded-xl flex justify-between items-center">
+                        <span className="text-left text-white">
+                          {chatError}
+                        </span>
 
-                {chatLoading ? (
-                  <MessageSkeleton />
-                ) : chatError ? (
-                  <div className="mx-auto max-w-md w-full">
-                    <div className="p-2 px-6 bg-red-500 rounded-xl flex justify-between items-center">
-                      <span className="text-left text-white">{chatError}</span>
-
-                      <button onClick={loadRoomData}>
-                        <div className="flex hover:text-white text-white/80 cursor-pointer items-center gap-2 text-sm transition-colors duration-200">
-                          <MarkerContent>Try Again</MarkerContent>
-                          <MarkerIcon>
-                            <RotateCcwIcon />
-                          </MarkerIcon>
-                        </div>
-                      </button>
+                        <button onClick={loadRoomData}>
+                          <div className="flex hover:text-white text-white/80 cursor-pointer items-center gap-2 text-sm transition-colors duration-200">
+                            <MarkerContent>Try Again</MarkerContent>
+                            <MarkerIcon>
+                              <RotateCcwIcon />
+                            </MarkerIcon>
+                          </div>
+                        </button>
+                      </div>
                     </div>
+                  ) : (
+                    <MessageContainer
+                      typingUsers={typingUsers}
+                      messages={messages}
+                      handleMessages={setMessages}
+                      user={sessionData.user}
+                    />
+                  )}
+
+                  <div ref={messagesEndRef} />
+
+                  <div className="shrink-0 sticky bottom-0 z-21 border-none p-3 w-full max-w-lg md:max-w-3xl mx-auto">
+                    <MessageInput
+                      message={messageContent}
+                      onMessageChange={setMessageContent}
+                      onMessageSend={handleSendMessage}
+                      disabled={Boolean(chatLoading || chatError)}
+                    />
                   </div>
-                ) : (
-                  <MessageContainer
-                    typingUsers={typingUsers}
-                    messages={messages}
-                    handleMessages={setMessages}
-                    user={sessionData.user}
-                  />
-                )}
-
-                <div ref={messagesEndRef} />
-
-                <div className="shrink-0 sticky bottom-0 z-21 border-none p-3 w-full max-w-lg md:max-w-3xl mx-auto">
-                  <MessageInput
-                    message={messageContent}
-                    onMessageChange={setMessageContent}
-                    onMessageSend={handleSendMessage}
-                    disabled={Boolean(chatLoading || chatError)}
-                  />
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     )
   );
