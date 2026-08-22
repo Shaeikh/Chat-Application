@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { Database } from "bun:sqlite";
+import Database from "better-sqlite3";
 
 export const auth = betterAuth({
   baseURL: {
@@ -8,6 +8,7 @@ export const auth = betterAuth({
       "http://localhost:3000",
       "http://192.168.137.1:3000",
       "*.serveousercontent.com",
+      "https://crinkle-shaping-creatable.ngrok-free.dev",
     ],
     fallback: process.env.BETTER_AUTH_URL || "http://localhost:3000",
   },
