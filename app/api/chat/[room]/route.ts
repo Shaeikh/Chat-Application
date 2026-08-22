@@ -24,7 +24,7 @@ export async function GET(
     const params = [room];
     if (before) params.push(before);
     const rows = db
-      .query(
+      .prepare(
         `
         SELECT   *
         FROM     (
@@ -43,7 +43,7 @@ export async function GET(
                   LEFT JOIN USER u
                   ON        m.user_id = u.id
                   WHERE     m.room = ?
-                  AND       m.type != "system" 
+                  AND       m.type != 'system' 
                   ${before ? "AND m.id < ?" : ""}
                   ORDER BY  m.id DESC limit 20
                   )
